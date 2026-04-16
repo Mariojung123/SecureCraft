@@ -1,0 +1,82 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - link "⛬ SecureCraft" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: ⛬
+        - text: SecureCraft
+      - link "Challenges" [ref=e9] [cursor=pointer]:
+        - /url: /challenges
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: ●
+          - text: Learn by fixing real vulnerabilities
+        - heading "Master Secure Coding" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Practice fixing real-world security vulnerabilities in an interactive editor. Submit your fix and watch it get tested against live attacks in isolated Docker containers.
+        - generic [ref=e17]:
+          - link "Browse Challenges" [ref=e18] [cursor=pointer]:
+            - /url: /challenges
+          - link "OWASP Top 10" [ref=e19] [cursor=pointer]:
+            - /url: https://owasp.org/www-project-top-ten/
+      - generic [ref=e20]:
+        - heading "How it works" [level=2] [ref=e21]
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: "01"
+            - generic [ref=e25]:
+              - heading "Read the vulnerability" [level=3] [ref=e26]
+              - paragraph [ref=e27]: Each challenge shows vulnerable code with a description of what's wrong and why it's dangerous.
+          - generic [ref=e28]:
+            - generic [ref=e29]: "02"
+            - generic [ref=e30]:
+              - heading "Fix it in the editor" [level=3] [ref=e31]
+              - paragraph [ref=e32]: Edit the code directly in the Monaco editor — the same editor used in VS Code.
+          - generic [ref=e33]:
+            - generic [ref=e34]: "03"
+            - generic [ref=e35]:
+              - heading "Watch the attack run" [level=3] [ref=e36]
+              - paragraph [ref=e37]: Your fix gets deployed in a Docker container. A real attack script runs against it. Pass or fail.
+      - heading "Categories" [level=2] [ref=e38]
+      - generic [ref=e39]:
+        - link "🗄️ SQL Injection 2 challenges" [ref=e40] [cursor=pointer]:
+          - /url: /challenges?category=SQL%20Injection
+          - generic [ref=e41]: 🗄️
+          - generic [ref=e42]: SQL Injection
+          - generic [ref=e43]: 2 challenges
+        - link "📜 XSS 2 challenges" [ref=e44] [cursor=pointer]:
+          - /url: /challenges?category=XSS
+          - generic [ref=e45]: 📜
+          - generic [ref=e46]: XSS
+          - generic [ref=e47]: 2 challenges
+        - link "💻 Command Injection 1 challenge" [ref=e48] [cursor=pointer]:
+          - /url: /challenges?category=Command%20Injection
+          - generic [ref=e49]: 💻
+          - generic [ref=e50]: Command Injection
+          - generic [ref=e51]: 1 challenge
+        - link "📁 Path Traversal 1 challenge" [ref=e52] [cursor=pointer]:
+          - /url: /challenges?category=Path%20Traversal
+          - generic [ref=e53]: 📁
+          - generic [ref=e54]: Path Traversal
+          - generic [ref=e55]: 1 challenge
+        - link "🔑 Secrets 1 challenge" [ref=e56] [cursor=pointer]:
+          - /url: /challenges?category=Secrets
+          - generic [ref=e57]: 🔑
+          - generic [ref=e58]: Secrets
+          - generic [ref=e59]: 1 challenge
+        - link "🔒 Cryptography 1 challenge" [ref=e60] [cursor=pointer]:
+          - /url: /challenges?category=Cryptography
+          - generic [ref=e61]: 🔒
+          - generic [ref=e62]: Cryptography
+          - generic [ref=e63]: 1 challenge
+        - link "🛡️ Access Control 1 challenge" [ref=e64] [cursor=pointer]:
+          - /url: /challenges?category=Access%20Control
+          - generic [ref=e65]: 🛡️
+          - generic [ref=e66]: Access Control
+          - generic [ref=e67]: 1 challenge
+        - link "🔐 Auth 1 challenge" [ref=e68] [cursor=pointer]:
+          - /url: /challenges?category=Auth
+          - generic [ref=e69]: 🔐
+          - generic [ref=e70]: Auth
+          - generic [ref=e71]: 1 challenge

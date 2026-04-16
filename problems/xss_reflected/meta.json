@@ -1,0 +1,47 @@
+{
+  "title": "Reflected XSS",
+  "category": "XSS",
+  "difficulty": "Easy",
+  "description": "A search results page reflects the user's query parameter directly into the HTML response without escaping. An attacker can craft a URL containing a `<script>` tag that executes in the victim's browser when they visit the link.\n\nFix the `search_page()` function to HTML-escape the query before rendering it.",
+  "hint": "Use `html.escape(query)` from Python's standard library before inserting the value into the HTML string.",
+  "explanation": "Reflected XSS occurs when untrusted data is included in an HTTP response without proper encoding. HTML-escaping converts `<`, `>`, `\"`, and `&` to safe entities so the browser renders them as text rather than interpreting them as HTML tags.",
+  "canonical_fix": "import html\n\ndef search_page(query):\n    safe_query = html.escape(query)\n    return f'<html><body><h1>Results for: {safe_query}</h1></body></html>'",
+  "attack_payload": "<script>alert(1)</script>",
+  "attack_flow": [
+    {
+      "label": "User Input",
+      "value": "<script>alert(1)</script>"
+    },
+    {
+      "label": "Response",
+      "value": "<html><body><h1>Results for: <script>alert(1)</script></h1></body></html>"
+    },
+    {
+      "label": "Browser sees",
+      "value": "<script> tag treated as HTML — JavaScript executes immediately"
+    },
+    {
+      "label": "Result",
+      "value": "Attacker JS runs in victim's browser; can steal cookies or redirect"
+    }
+  ],
+  "why_blocked": "`html.escape()` converts `<` to `&lt;` and `>` to `&gt;`, so `<script>alert(1)</script>` becomes the harmless text `&lt;script&gt;alert(1)&lt;/script&gt;`. The browser renders it as visible text instead of executing it as code.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "return f\".*\\{query\\}",
+      "f\"<html>.*\\{query\\}",
+      "\\+\\s*query\\s*\\+"
+    ],
+    "php": [
+      "return \"<html>.*\\$query",
+      "\"<h1>Results for:.*\\$query",
+      "echo.*\\$_GET\\[.q.\\]"
+    ]
+  }
+}

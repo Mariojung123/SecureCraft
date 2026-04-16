@@ -1,0 +1,49 @@
+{
+  "title": "Command Injection",
+  "category": "Command Injection",
+  "difficulty": "Medium",
+  "description": "A utility endpoint pings a user-supplied hostname using a shell command built via string concatenation. An attacker can append shell metacharacters (`;`, `&&`, `|`) to run arbitrary commands on the server.\n\nFix `ping_host()` to pass arguments as a list and avoid shell=True.",
+  "hint": "Use `subprocess.run([\"ping\", \"-c\", \"1\", hostname], shell=False)` and validate that hostname contains only safe characters.",
+  "explanation": "Passing user input directly to a shell command allows attackers to chain additional commands using `;`, `&&`, or `|`. Using `subprocess.run` with a list (not a string) and `shell=False` prevents the shell from interpreting metacharacters.",
+  "canonical_fix": "import subprocess, re\n\ndef ping_host(hostname):\n    if not re.match(r'^[a-zA-Z0-9._-]+$', hostname):\n        return 'Invalid hostname'\n    result = subprocess.run(\n        ['ping', '-c', '1', hostname],\n        capture_output=True, text=True, timeout=5\n    )\n    return result.stdout + result.stderr",
+  "attack_payload": "127.0.0.1; id",
+  "attack_flow": [
+    {
+      "label": "User Input",
+      "value": "127.0.0.1; id"
+    },
+    {
+      "label": "Constructed",
+      "value": "ping -c 1 127.0.0.1; id"
+    },
+    {
+      "label": "Shell parsed",
+      "value": "[ping -c 1 127.0.0.1]  +  [id]  ← injected!"
+    },
+    {
+      "label": "Result",
+      "value": "uid=0(root) gid=0(root) groups=0(root)  ← OS command executed"
+    }
+  ],
+  "why_blocked": "By passing arguments as a list with `shell=False`, Python's subprocess hands each argument directly to the OS — no shell interpreter is involved. Metacharacters like `;` are treated as literal data, not shell syntax, so the injected `id` command never runs.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "f\"ping.*\\{",
+      "subprocess\\.run\\(\\s*f\"",
+      "shell\\s*=\\s*True",
+      "os\\.system\\("
+    ],
+    "php": [
+      "shell_exec\\(\"ping.*\\.\\s*\\$",
+      "shell_exec\\(.*\\.\\s*\\$hostname",
+      "exec\\(.*\\$hostname",
+      "system\\(.*\\$hostname"
+    ]
+  }
+}

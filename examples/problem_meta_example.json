@@ -1,0 +1,35 @@
+{
+  "id": "example_vulnerability",
+  "title": "Example Vulnerability Challenge",
+  "category": "Injection",
+  "difficulty": "Medium",
+  "description": "Fix the vulnerable code to prevent exploitation.",
+  "hint": "Consider using parameterized queries instead of string concatenation.",
+  "languages": ["python", "php", "java"],
+  "vuln_patterns": {
+    "python": [
+      "f\".*{.*}.*\"",
+      "format\\(.*user",
+      "\\%.*user_input"
+    ],
+    "php": [
+      "\\$_GET\\[",
+      "\\$_POST\\[",
+      "mysql_query.*\\$"
+    ],
+    "java": [
+      "Statement.*execute",
+      "\\+.*request\\.getParameter"
+    ]
+  },
+  "attack_payload": "' OR '1'='1",
+  "attack_flow": [
+    { "label": "User Input",   "value": "username = \\' OR \\'1\\'=\\'1" },
+    { "label": "Query Built",  "value": "SELECT * FROM users WHERE name = \\' OR \\'1\\'=\\'1" },
+    { "label": "DB Returns",   "value": "All rows (auth bypass)" },
+    { "label": "App Response", "value": "Login successful as admin" }
+  ],
+  "canonical_fix": "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE name = ?', (username,))",
+  "explanation": "Parameterized queries separate SQL logic from data, preventing injection.",
+  "why_blocked": "The parameterized query treats the input as a literal string value, not SQL syntax."
+}

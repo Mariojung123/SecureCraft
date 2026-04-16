@@ -1,0 +1,46 @@
+{
+  "title": "Weak Password Hashing",
+  "category": "Cryptography",
+  "difficulty": "Easy",
+  "description": "User passwords are hashed with MD5 before being stored. MD5 is a fast, broken cryptographic hash — rainbow tables and GPU crackers can reverse billions of MD5 hashes per second.\n\nFix `hash_password()` and `verify_password()` to use bcrypt (a slow, salted adaptive hashing algorithm).",
+  "hint": "Use `bcrypt.hashpw(password.encode(), bcrypt.gensalt())` for hashing and `bcrypt.checkpw()` for verification.",
+  "explanation": "MD5 and SHA-1/256 are not suitable for password storage because they are designed to be fast. Passwords need slow, salted algorithms like bcrypt, scrypt, or Argon2 that make brute-force attacks computationally expensive.",
+  "canonical_fix": "import bcrypt\n\ndef hash_password(password):\n    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()\n\ndef verify_password(password, stored_hash):\n    return bcrypt.checkpw(password.encode(), stored_hash.encode())",
+  "attack_payload": "password123 → MD5: 482c811da5d5b4bc6d497ffa98491e38",
+  "attack_flow": [
+    {
+      "label": "Password stored",
+      "value": "hashlib.md5('password123').hexdigest()  →  482c811da5d5b4bc6d497ffa98491e38"
+    },
+    {
+      "label": "DB breach",
+      "value": "Attacker extracts MD5 hash from the database"
+    },
+    {
+      "label": "Crack attack",
+      "value": "Rainbow table lookup or GPU cracking (billions of MD5/sec)"
+    },
+    {
+      "label": "Result",
+      "value": "Plaintext 'password123' recovered in milliseconds"
+    }
+  ],
+  "why_blocked": "bcrypt is intentionally slow (configurable cost factor) and includes a per-password salt. Even identical passwords produce different hashes. A single bcrypt verification takes ~100ms — making brute-force billions of times harder than MD5.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "hashlib\\.md5\\(",
+      "hashlib\\.sha1\\("
+    ],
+    "php": [
+      "return md5\\(\\$password\\)",
+      "md5\\(\\$password\\)\\s*===\\s*\\$stored_hash",
+      "function hash_password.*\\{[^}]*return md5"
+    ]
+  }
+}

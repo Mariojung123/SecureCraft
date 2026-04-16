@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SecureLogin</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    body{background:#f1f5f9;min-height:100vh;display:flex;flex-direction:column}
+    nav{background:#1e293b;padding:13px 24px;display:flex;align-items:center;gap:10px}
+    .logo{color:#fff;font-weight:700;font-size:15px}
+    .tag{background:#f97316;color:#fff;font-size:10px;padding:2px 9px;border-radius:99px;font-weight:600;letter-spacing:.06em}
+    .center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+    .card{background:#fff;border-radius:14px;padding:32px;box-shadow:0 4px 24px rgba(0,0,0,.1);width:100%;max-width:360px}
+    .card-title{font-size:20px;font-weight:700;color:#1e293b;margin-bottom:4px}
+    .card-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+    label{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+    .field{margin-bottom:16px}
+    input{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;outline:none}
+    input:focus{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.12)}
+    button{width:100%;background:#f97316;color:#fff;border:none;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+    button:hover{background:#ea580c}
+    button:disabled{opacity:.5;cursor:default}
+    #msg{margin-top:16px;padding:10px 14px;border-radius:8px;font-size:13px;display:none}
+    .ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+    .err{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+    .counter{font-size:11px;color:#94a3b8;text-align:center;margin-top:16px}
+    .attempts{font-weight:600;color:#f97316}
+  </style>
+</head>
+<body>
+  <nav><span class="logo">&#128274; SecureLogin</span><span class="tag">AUTHENTICATION</span></nav>
+  <div class="center">
+    <div class="card">
+      <div class="card-title">Sign in</div>
+      <div class="card-sub">Enter your credentials to continue.</div>
+      <div class="field"><label for="u">Username</label><input id="u" type="text" placeholder="Username" autocomplete="off"></div>
+      <div class="field"><label for="p">Password</label><input id="p" type="password" placeholder="Password"></div>
+      <button id="btn" onclick="doLogin()">Sign In</button>
+      <div id="msg"></div>
+      <p class="counter">Attempts this session: <span id="count" class="attempts">0</span></p>
+    </div>
+  </div>
+  <script>
+    let attempts=0;
+    document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    async function doLogin(){
+      const u=document.getElementById('u').value,p=document.getElementById('p').value;
+      const btn=document.getElementById('btn'),msg=document.getElementById('msg');
+      btn.disabled=true;btn.textContent='Signing in\u2026';
+      msg.style.display='none';
+      try{
+        const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+        const d=await r.json();
+        attempts++;
+        document.getElementById('count').textContent=attempts;
+        msg.style.display='block';
+        if(r.status===429){msg.className='warn';msg.textContent='Too many requests \u2014 rate limit triggered!'}
+        else if(d.success){msg.className='ok';msg.textContent='Login successful!'}
+        else{msg.className='err';msg.textContent='Invalid credentials. ('+(d.error||'Unauthorized')+')'}
+      }catch(e){msg.style.display='block';msg.className='err';msg.textContent='Request failed.'}
+      btn.disabled=false;btn.textContent='Sign In';
+    }
+  </script>
+</body>
+</html>

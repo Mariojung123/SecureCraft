@@ -1,0 +1,52 @@
+{
+  "id": "sql_injection_login",
+  "title": "SQL Injection: Login Bypass",
+  "category": "SQL Injection",
+  "difficulty": "Easy",
+  "description": "A login endpoint is vulnerable to SQL injection. Your job is to fix the login() function using parameterized queries so that SQL injection attacks are blocked while normal login still works.",
+  "hint": "Use cursor.execute() with ? placeholders instead of string formatting.",
+  "canonical_fix": "cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))",
+  "explanation": "String concatenation in SQL queries allows attackers to manipulate the query logic. Parameterized queries treat user input as data, never as SQL code.",
+  "attack_payload": "' OR '1'='1' --",
+  "attack_flow": [
+    {
+      "label": "User Input",
+      "value": "username: ' OR '1'='1' --    password: anything"
+    },
+    {
+      "label": "Query built",
+      "value": "SELECT * FROM users WHERE username = '' OR '1'='1' --' AND password = '...'"
+    },
+    {
+      "label": "SQL parsed",
+      "value": "WHERE is always TRUE (1=1); password check commented out with --"
+    },
+    {
+      "label": "Result",
+      "value": "Authentication bypassed — logged in without valid credentials"
+    }
+  ],
+  "why_blocked": "Parameterized queries (`?` placeholders) pass user input to the database driver as a bound value, separate from the SQL statement. The driver escapes single quotes, so injected syntax like `' OR 1=1--` becomes harmless literal text that matches no username.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "f\"SELECT.*WHERE.*=.*'\\{",
+      "\"SELECT.*WHERE.*username.*=.*'%s'",
+      "\"%s.*AND.*password.*%s\"",
+      "\\.format\\(username",
+      "cursor\\.execute\\(query\\)",
+      "\\+.*username.*\\+"
+    ],
+    "php": [
+      "\"SELECT.*\\$username.*AND.*\\$password\"",
+      "\\$query\\s*=\\s*\"SELECT.*'\\$username'",
+      "\\$db->query\\(\\$query\\)",
+      "\\.\\s*\\$username.*\\.\\s*\\$password"
+    ]
+  }
+}

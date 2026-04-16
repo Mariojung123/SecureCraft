@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir flask
+
+# Copy challenge support files only
+# solution.py is injected at runtime by the orchestrator
+COPY attack.sh check.py /app/
+COPY templates/ /app/templates/
+COPY solution.py /app/solution.py
+RUN chmod +x /app/attack.sh
+
+CMD ["sh", "-c", "python /app/solution.py"]

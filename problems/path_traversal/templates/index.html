@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FileServe – File Browser</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    body{background:#f1f5f9;min-height:100vh}
+    nav{background:#0f172a;padding:13px 24px;display:flex;align-items:center;gap:10px}
+    .logo{color:#fff;font-weight:700;font-size:15px}
+    .tag{background:#10b981;color:#fff;font-size:10px;padding:2px 9px;border-radius:99px;font-weight:600;letter-spacing:.06em}
+    .wrap{max-width:600px;margin:40px auto;padding:0 16px}
+    .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);margin-bottom:16px}
+    h2{font-size:15px;font-weight:600;color:#0f172a;margin-bottom:4px}
+    .sub{font-size:13px;color:#64748b;margin-bottom:20px}
+    label{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+    .row{display:flex;gap:8px}
+    input{flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;color:#0f172a;outline:none;font-family:monospace}
+    input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+    button{background:#10b981;color:#fff;border:none;padding:9px 18px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}
+    button:hover{background:#059669}
+    button:disabled{opacity:.5;cursor:default}
+    .viewer{margin-top:16px}
+    .viewer-header{display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-bottom:none;padding:8px 14px;border-radius:8px 8px 0 0}
+    .viewer-name{font-size:12px;font-family:monospace;color:#475569;font-weight:600}
+    .viewer-body{background:#0f172a;color:#e2e8f0;font-family:'Courier New',monospace;font-size:13px;padding:16px;border-radius:0 0 8px 8px;white-space:pre-wrap;word-break:break-all;min-height:100px;line-height:1.6}
+    .err-body{background:#fff1f2;color:#be123c;font-family:monospace;font-size:13px;padding:16px;border-radius:0 0 8px 8px}
+    .hint{font-size:12px;color:#94a3b8;margin-top:10px}
+    .quicklinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .ql{font-size:11px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:3px 9px;cursor:pointer;color:#475569;font-family:monospace}
+    .ql:hover{background:#e2e8f0}
+  </style>
+</head>
+<body>
+  <nav><span class="logo">&#128193; FileServe</span><span class="tag">FILE BROWSER</span></nav>
+  <div class="wrap">
+    <div class="card">
+      <h2>Download File</h2>
+      <p class="sub">Retrieve a file from the public directory.</p>
+      <label for="file">Filename</label>
+      <div class="row">
+        <input id="file" type="text" placeholder="e.g. public.txt" autocomplete="off" spellcheck="false">
+        <button id="btn" onclick="loadFile()">Download</button>
+      </div>
+      <p class="hint">Quick access:</p>
+      <div class="quicklinks">
+        <span class="ql" onclick="setFile('public.txt')">public.txt</span>
+        <span class="ql" onclick="setFile('readme.txt')">readme.txt</span>
+        <span class="ql" onclick="setFile('../etc/passwd')">..</span>
+      </div>
+      <div id="viewer" class="viewer" style="display:none">
+        <div class="viewer-header"><span class="viewer-name" id="vname"></span></div>
+        <div id="vbody" class="viewer-body"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.getElementById('file').addEventListener('keydown',e=>{if(e.key==='Enter')loadFile()});
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function setFile(f){document.getElementById('file').value=f}
+    async function loadFile(){
+      const f=document.getElementById('file').value.trim();
+      if(!f)return;
+      const btn=document.getElementById('btn'),viewer=document.getElementById('viewer');
+      const vname=document.getElementById('vname'),vbody=document.getElementById('vbody');
+      btn.disabled=true;btn.textContent='Loading\u2026';
+      viewer.style.display='block';
+      vname.textContent=f;
+      vbody.className='viewer-body';
+      vbody.textContent='Loading\u2026';
+      try{
+        const r=await fetch('/download?file='+encodeURIComponent(f));
+        const d=await r.json();
+        if(r.ok){vbody.textContent=d.content}
+        else{vbody.className='err-body';vbody.textContent='Error '+r.status+': '+(d.error||'Not found')}
+      }catch(e){vbody.className='err-body';vbody.textContent='Request failed: '+e}
+      btn.disabled=false;btn.textContent='Download';
+    }
+  </script>
+</body>
+</html>

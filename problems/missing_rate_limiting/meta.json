@@ -1,0 +1,44 @@
+{
+  "title": "Missing Rate Limiting",
+  "category": "Auth",
+  "difficulty": "Hard",
+  "description": "A login endpoint has no rate limiting or account lockout. An attacker can send thousands of login attempts per second to brute-force passwords.\n\nFix the endpoint to add in-memory rate limiting: allow at most 5 login attempts per IP address per 60 seconds, returning HTTP 429 when the limit is exceeded.",
+  "hint": "Use a dictionary keyed by IP address to store attempt counts and timestamps. Reset the counter after 60 seconds. Return `jsonify({\"error\": \"Too many requests\"}), 429` when the limit is hit.",
+  "explanation": "Brute-force attacks are trivially easy against endpoints without rate limiting. Even a weak rate limit (5 attempts/minute) turns a minutes-long attack into a months-long one. Production systems should also add exponential back-off, CAPTCHA, and account lockout.",
+  "canonical_fix": "from collections import defaultdict\nimport time\n\nATTEMPTS = defaultdict(list)\nMAX_ATTEMPTS = 5\nWINDOW = 60\n\ndef is_rate_limited(ip):\n    now = time.time()\n    ATTEMPTS[ip] = [t for t in ATTEMPTS[ip] if now - t < WINDOW]\n    if len(ATTEMPTS[ip]) >= MAX_ATTEMPTS:\n        return True\n    ATTEMPTS[ip].append(now)\n    return False",
+  "attack_payload": "10 rapid POST /login requests",
+  "attack_flow": [
+    {
+      "label": "Attacker sends",
+      "value": "10 rapid POST /login requests with different passwords"
+    },
+    {
+      "label": "is_rate_limited",
+      "value": "always returns False — no tracking, no throttle"
+    },
+    {
+      "label": "Each attempt",
+      "value": "Returns HTTP 401 (wrong password) instantly"
+    },
+    {
+      "label": "Result",
+      "value": "Unlimited attempts allowed — password can be brute-forced"
+    }
+  ],
+  "why_blocked": "Tracking attempts per IP with a sliding time window means the 6th attempt within 60 seconds returns HTTP 429. The attacker's script slows from thousands of attempts/second to 5/minute — making brute-force impractical.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "return False\\s*#"
+    ],
+    "php": [
+      "return false;\\s*\\/\\/ TODO",
+      "function is_rate_limited.*\\{[^}]*return false"
+    ]
+  }
+}

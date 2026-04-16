@@ -1,0 +1,48 @@
+{
+  "title": "SQL Injection — Search",
+  "category": "SQL Injection",
+  "difficulty": "Medium",
+  "description": "A product search endpoint constructs its SQL query using raw string concatenation with the user's search term. An attacker can inject SQL to dump the entire products table or exfiltrate data from other tables via UNION.\n\nFix the `search_products()` function to use parameterized queries.",
+  "hint": "Use `LIKE ?` with `('%' + term + '%',)` as the parameter tuple.",
+  "explanation": "UNION-based SQL injection lets attackers append extra SELECT statements to the original query, extracting data from any table in the database. Parameterized queries prevent this by ensuring user input is always treated as a literal value.",
+  "canonical_fix": "def search_products(term):\n    conn = get_db()\n    cursor = conn.cursor()\n    cursor.execute(\n        \"SELECT * FROM products WHERE name LIKE ?\",\n        ('%' + term + '%',),\n    )\n    return cursor.fetchall()",
+  "attack_payload": "%' UNION SELECT 1,token,3 FROM secrets--",
+  "attack_flow": [
+    {
+      "label": "User Input",
+      "value": "%' UNION SELECT 1,token,3 FROM secrets--"
+    },
+    {
+      "label": "Query built",
+      "value": "SELECT * FROM products WHERE name LIKE '%%' UNION SELECT 1,token,3 FROM secrets--%'"
+    },
+    {
+      "label": "SQL parsed",
+      "value": "UNION appends a second SELECT — returns rows from the secrets table"
+    },
+    {
+      "label": "Result",
+      "value": "API_KEY_12345 leaked from the secrets table"
+    }
+  ],
+  "why_blocked": "Parameterized queries bind `term` as a literal string value. The database driver escapes the single quote in `%'`, so the UNION clause is never interpreted as SQL. The query safely searches for the literal text the user typed.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "f\"SELECT.*LIKE.*'%\\{",
+      "f\"SELECT.*WHERE.*\\{term\\}",
+      "\\.format\\(.*term",
+      "cursor\\.execute\\(query\\)"
+    ],
+    "php": [
+      "\"SELECT.*LIKE.*'%\\$term%'\"",
+      "\\$query\\s*=\\s*\"SELECT.*LIKE.*\\$term",
+      "\\$db->query\\(\\$query\\)"
+    ]
+  }
+}

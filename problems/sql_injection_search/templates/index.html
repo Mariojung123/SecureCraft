@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ShopSearch – Product Catalog</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    body{background:#f1f5f9;min-height:100vh}
+    nav{background:#0f172a;padding:13px 24px;display:flex;align-items:center;gap:10px}
+    .logo{color:#fff;font-weight:700;font-size:15px}
+    .tag{background:#f59e0b;color:#fff;font-size:10px;padding:2px 9px;border-radius:99px;font-weight:600;letter-spacing:.06em}
+    .wrap{max-width:620px;margin:40px auto;padding:0 16px}
+    .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);margin-bottom:16px}
+    h2{font-size:15px;font-weight:600;color:#0f172a;margin-bottom:4px}
+    .sub{font-size:13px;color:#64748b;margin-bottom:20px}
+    label{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+    .row{display:flex;gap:8px}
+    input{flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;color:#0f172a;outline:none}
+    input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+    button{background:#f59e0b;color:#fff;border:none;padding:9px 18px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}
+    button:hover{background:#d97706}
+    button:disabled{opacity:.5;cursor:default}
+    .results{margin-top:16px}
+    .item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid #f1f5f9;border-radius:8px;margin-bottom:8px;background:#fafafa}
+    .item-name{font-size:14px;font-weight:500;color:#0f172a}
+    .item-id{font-size:11px;color:#94a3b8;margin-top:2px}
+    .item-price{font-size:15px;font-weight:700;color:#059669}
+    .empty{text-align:center;color:#94a3b8;font-size:14px;padding:24px 0}
+    .hint{font-size:12px;color:#94a3b8;margin-top:10px}
+  </style>
+</head>
+<body>
+  <nav><span class="logo">&#128722; ShopSearch</span><span class="tag">PRODUCT CATALOG</span></nav>
+  <div class="wrap">
+    <div class="card">
+      <h2>Search Products</h2>
+      <p class="sub">Find items in our catalog by name.</p>
+      <label for="q">Search term</label>
+      <div class="row">
+        <input id="q" type="text" placeholder="e.g. Widget" autocomplete="off">
+        <button id="btn" onclick="doSearch()">Search</button>
+      </div>
+      <p class="hint">Try: <code>W</code>, <code>Gadget</code>, or leave blank to list all.</p>
+      <div id="results" class="results"></div>
+    </div>
+  </div>
+  <script>
+    document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()});
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    async function doSearch(){
+      const q=document.getElementById('q').value;
+      const btn=document.getElementById('btn'),res=document.getElementById('results');
+      btn.disabled=true;btn.textContent='Searching\u2026';
+      res.innerHTML='';
+      try{
+        const r=await fetch('/search?q='+encodeURIComponent(q));
+        const data=await r.json();
+        if(!Array.isArray(data)||data.length===0){res.innerHTML='<div class="empty">No products found.</div>'}
+        else{res.innerHTML=data.map(row=>'<div class="item"><div><div class="item-name">'+esc(row[1])+'</div><div class="item-id">ID: '+esc(row[0])+'</div></div><div class="item-price">$'+parseFloat(row[2]).toFixed(2)+'</div></div>').join('')}
+      }catch(e){res.innerHTML='<div class="empty" style="color:#f87171">Request failed.</div>'}
+      btn.disabled=false;btn.textContent='Search';
+    }
+  </script>
+</body>
+</html>

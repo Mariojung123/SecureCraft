@@ -1,0 +1,45 @@
+{
+  "title": "Hardcoded Credentials",
+  "category": "Secrets",
+  "difficulty": "Easy",
+  "description": "An admin endpoint compares the supplied API key against a secret hardcoded directly in the source file. Anyone who reads the source code (e.g. via a public repo or a leak) immediately has the secret.\n\nFix `check_api_key()` to read the secret from an environment variable instead.",
+  "hint": "Use `os.environ.get('ADMIN_API_KEY')` and ensure the comparison uses a constant-time function like `hmac.compare_digest()` to prevent timing attacks.",
+  "explanation": "Hardcoded secrets are frequently exposed through version control history, logs, or code leaks. Always store secrets in environment variables or a secrets manager. Use `hmac.compare_digest()` for constant-time comparison to prevent timing oracle attacks.",
+  "canonical_fix": "import os, hmac\n\ndef check_api_key(provided_key):\n    expected = os.environ.get('ADMIN_API_KEY', '')\n    if not expected:\n        return False\n    return hmac.compare_digest(provided_key, expected)",
+  "attack_payload": "super_secret_admin_key_1234",
+  "attack_flow": [
+    {
+      "label": "Secret exposed",
+      "value": "ADMIN_API_KEY = \"super_secret_admin_key_1234\"  in source code"
+    },
+    {
+      "label": "Attacker reads",
+      "value": "Key extracted from Git history, leaked file, or public repo"
+    },
+    {
+      "label": "Request sent",
+      "value": "GET /admin   X-Api-Key: super_secret_admin_key_1234"
+    },
+    {
+      "label": "Result",
+      "value": "Admin endpoint unlocked — sensitive data returned"
+    }
+  ],
+  "why_blocked": "Reading the key from an environment variable (`os.environ.get('ADMIN_API_KEY')`) means the secret is never in source code. Even if the codebase is fully public, an attacker cannot know the key without access to the deployment environment.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "ADMIN_API_KEY\\s*=\\s*\"[^\"]+\"",
+      "return provided_key\\s*==\\s*ADMIN_API_KEY"
+    ],
+    "php": [
+      "define\\('ADMIN_API_KEY',\\s*'[^']+'\\)",
+      "return \\$provided_key\\s*===\\s*ADMIN_API_KEY"
+    ]
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "title": "Path Traversal",
+  "category": "Path Traversal",
+  "difficulty": "Medium",
+  "description": "A file download endpoint builds a file path by joining a base directory with a user-supplied filename — but it doesn't verify the result stays within the base directory. An attacker can use `../` sequences to read arbitrary files on the server.\n\nFix `get_file()` to reject paths that escape the base directory.",
+  "hint": "Use `os.path.realpath()` on the resolved path and check that it starts with `os.path.realpath(BASE_DIR)`.",
+  "explanation": "Path traversal (directory traversal) exploits insufficient path validation. `os.path.join` does not prevent `../` escapes. Always resolve the absolute real path and verify it starts with the expected base directory before reading the file.",
+  "canonical_fix": "import os\n\nBASE_DIR = '/app/files'\n\ndef get_file(filename):\n    requested = os.path.realpath(os.path.join(BASE_DIR, filename))\n    if not requested.startswith(os.path.realpath(BASE_DIR) + os.sep):\n        return None, 'Access denied'\n    if not os.path.isfile(requested):\n        return None, 'Not found'\n    with open(requested) as f:\n        return f.read(), None",
+  "attack_payload": "../../etc/passwd",
+  "attack_flow": [
+    {
+      "label": "User Input",
+      "value": "../../etc/passwd"
+    },
+    {
+      "label": "Path built",
+      "value": "os.path.join('/app/files', '../../etc/passwd')  →  /etc/passwd"
+    },
+    {
+      "label": "No validation",
+      "value": "Path escapes /app/files without any boundary check"
+    },
+    {
+      "label": "Result",
+      "value": "/etc/passwd contents returned — sensitive system file exposed"
+    }
+  ],
+  "why_blocked": "`os.path.realpath()` resolves all `../` segments to an absolute canonical path. Checking that the result starts with the real base directory catches any attempt to escape, regardless of how many `../` sequences are chained.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "^\\s*path\\s*=\\s*os\\.path\\.join\\("
+    ],
+    "php": [
+      "^\\s*\\$path\\s*=\\s*BASE_DIR\\s*\\.\\s*'/'\\s*\\.\\s*\\$filename\\s*;"
+    ]
+  }
+}

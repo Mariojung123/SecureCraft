@@ -1,0 +1,54 @@
+# .claudeignore
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Version control
+.git/
+
+# Logs & temp
+*.log
+*.tmp
+*.cache
+.cache/
+
+# Lock files (읽을 필요 없음, package.json으로 충분)
+package-lock.json
+yarn.lock
+poetry.lock
+Pipfile.lock
+
+# Docker artifacts
+*.tar
+*.tar.gz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DB files (런타임 생성)
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage / test artifacts
+.coverage
+htmlcov/
+.pytest_cache/

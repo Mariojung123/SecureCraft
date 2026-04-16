@@ -1,0 +1,48 @@
+{
+  "title": "Stored XSS",
+  "category": "XSS",
+  "difficulty": "Medium",
+  "description": "A comment system stores user-submitted comments in a database and renders them directly in HTML without escaping. Any user visiting the page executes any script stored by an attacker.\n\nFix the `render_comments()` function to escape each comment before inserting it into the HTML.",
+  "hint": "Apply `html.escape()` to each comment's text before inserting it into the HTML template.",
+  "explanation": "Stored (persistent) XSS is more dangerous than reflected XSS because the payload is saved server-side and runs for every user who views the page. Always escape untrusted content at render time, not just at input time.",
+  "canonical_fix": "import html\n\ndef render_comments(comments):\n    items = ''.join(f'<li>{html.escape(c)}</li>' for c in comments)\n    return f'<html><body><ul>{items}</ul></body></html>'",
+  "attack_payload": "<script>alert('xss')</script>",
+  "attack_flow": [
+    {
+      "label": "Attacker posts",
+      "value": "comment: <script>alert('xss')</script>"
+    },
+    {
+      "label": "Stored as-is",
+      "value": "Server saves the raw HTML string without escaping"
+    },
+    {
+      "label": "Every visitor",
+      "value": "Page renders: <li><script>alert('xss')</script></li>"
+    },
+    {
+      "label": "Result",
+      "value": "Script runs in every visitor's browser — persistent, wormable"
+    }
+  ],
+  "why_blocked": "`html.escape()` applied at render time converts `<script>` to `&lt;script&gt;` before it enters the HTML. Even if the raw payload is stored in the database, it is always rendered as safe visible text rather than executable HTML.",
+  "language": "python",
+  "languages": [
+    "python",
+    "php",
+    "java"
+  ],
+  "vuln_patterns": {
+    "python": [
+      "\\{c\\}</p>",
+      "<p.*class.*text.*>\\{c\\}",
+      "f\"\"\".*<.*>.*\\{c\\}",
+      "\\+\\s*c\\s*\\+"
+    ],
+    "php": [
+      "\"<li.*>\\$c</li>\"",
+      "\\$items\\s*\\.=\\s*\"<li.*>\\$c",
+      "\"<li class=\\\\\"comment-item\\\\\">\\$c</li>\""
+    ]
+  }
+}

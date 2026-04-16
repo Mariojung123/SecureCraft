@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NetTool – Network Diagnostics</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    body{background:#f1f5f9;min-height:100vh}
+    nav{background:#0f172a;padding:13px 24px;display:flex;align-items:center;gap:10px}
+    .logo{color:#fff;font-weight:700;font-size:15px;letter-spacing:-.02em}
+    .tag{background:#0ea5e9;color:#fff;font-size:10px;padding:2px 9px;border-radius:99px;font-weight:600;letter-spacing:.06em}
+    .wrap{max-width:580px;margin:40px auto;padding:0 16px}
+    .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);margin-bottom:16px}
+    h2{font-size:15px;font-weight:600;color:#0f172a;margin-bottom:4px}
+    .sub{font-size:13px;color:#64748b;margin-bottom:20px}
+    label{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+    .row{display:flex;gap:8px}
+    input{flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;color:#0f172a;outline:none;font-family:monospace}
+    input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.12)}
+    button{background:#0ea5e9;color:#fff;border:none;padding:9px 18px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+    button:hover{background:#0284c7}
+    button:disabled{opacity:.5;cursor:default}
+    .term{background:#0f172a;color:#86efac;font-family:'Courier New',monospace;font-size:13px;padding:16px;border-radius:8px;white-space:pre-wrap;word-break:break-all;min-height:80px;margin-top:16px;line-height:1.6}
+    .p{color:#38bdf8}
+    .dim{color:#475569}
+    .hint{font-size:12px;color:#94a3b8;margin-top:10px}
+  </style>
+</head>
+<body>
+  <nav><span class="logo">&#11041; NetTool</span><span class="tag">NETWORK DIAGNOSTICS</span></nav>
+  <div class="wrap">
+    <div class="card">
+      <h2>Ping Host</h2>
+      <p class="sub">Check connectivity to a hostname or IP address.</p>
+      <label for="host">Hostname / IP Address</label>
+      <div class="row">
+        <input id="host" type="text" placeholder="e.g. 127.0.0.1" autocomplete="off" spellcheck="false">
+        <button id="btn" onclick="runPing()">Ping</button>
+      </div>
+      <div id="out" class="term" style="display:none"></div>
+      <p class="hint">Try common hosts: <code>localhost</code>, <code>127.0.0.1</code>, <code>8.8.8.8</code></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('host').addEventListener('keydown',e=>{if(e.key==='Enter')runPing()});
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    async function runPing(){
+      const host=document.getElementById('host').value.trim();
+      if(!host)return;
+      const btn=document.getElementById('btn'),out=document.getElementById('out');
+      btn.disabled=true;btn.textContent='Running\u2026';
+      out.style.display='block';
+      out.innerHTML='<span class="p">$</span> ping -c 1 '+esc(host)+'\n<span class="dim">waiting\u2026</span>';
+      try{
+        const r=await fetch('/ping?host='+encodeURIComponent(host));
+        const d=await r.json();
+        out.innerHTML='<span class="p">$</span> ping -c 1 '+esc(host)+'\n'+esc(d.output||'(no output)');
+      }catch(e){out.innerHTML='<span style="color:#f87171">Request failed: '+esc(e)+'</span>'}
+      btn.disabled=false;btn.textContent='Ping';
+    }
+  </script>
+</body>
+</html>
