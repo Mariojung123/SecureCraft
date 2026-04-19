@@ -1,6 +1,8 @@
 import os
 import re
+import threading
 
+import sandbox.orchestrator as orchestrator
 from ai_analyzer import analyze_code_with_ai
 
 EXT_MAP = {"python": "py", "php": "php", "java": "java"}
@@ -16,6 +18,44 @@ def find_vuln_lines(code: str, patterns: list) -> list:
     return matched
 
 
+def read_skeleton(problems_dir: str, challenge_id: str, language: str) -> str:
+    ext = EXT_MAP.get(language, "py")
+    path = os.path.join(problems_dir, challenge_id, f"skeleton_{language}.{ext}")
+    if not os.path.exists(path):
+        return ""
+    with open(path) as fh:
+        return fh.read()
+
+
+def _read_solution(problems_dir: str, challenge_id: str, language: str) -> str:
+    ext = EXT_MAP.get(language, "py")
+    path = os.path.join(problems_dir, challenge_id, f"solution_{language}.{ext}")
+    if not os.path.exists(path):
+        return ""
+    with open(path) as fh:
+        return fh.read()
+
+
+def _get_regex_vuln_lines(code: str, meta: dict, language: str) -> list:
+    lang_patterns = meta.get("vuln_patterns", {})
+    patterns = lang_patterns.get(language, []) if isinstance(lang_patterns, dict) else lang_patterns
+    return find_vuln_lines(code, patterns)
+
+
+def _get_ai_analysis(code: str, language: str, meta: dict, challenge_id: str) -> tuple:
+    try:
+        result = analyze_code_with_ai(
+            code=code,
+            language=language,
+            problem_id=challenge_id,
+            problem_title=meta.get("title", challenge_id),
+            problem_type=challenge_id,
+        )
+        return result, None
+    except Exception as exc:
+        return None, str(exc)
+
+
 def assemble_report(
     session_id: str,
     challenge_id: str,
@@ -25,29 +65,9 @@ def assemble_report(
     validation_result: dict,
     problems_dir: str,
 ) -> dict:
-    ext = EXT_MAP.get(language, "py")
-    solution_path = os.path.join(problems_dir, challenge_id, f"solution_{language}.{ext}")
-    fixed_code = ""
-    if os.path.exists(solution_path):
-        with open(solution_path) as fh:
-            fixed_code = fh.read()
-
-    lang_patterns = meta.get("vuln_patterns", {})
-    patterns = lang_patterns.get(language, []) if isinstance(lang_patterns, dict) else lang_patterns
-    regex_vuln_lines = find_vuln_lines(code, patterns)
-
-    ai_analysis = None
-    ai_error = None
-    try:
-        ai_analysis = analyze_code_with_ai(
-            code=code,
-            language=language,
-            problem_id=challenge_id,
-            problem_title=meta.get("title", challenge_id),
-            problem_type=challenge_id,
-        )
-    except Exception as exc:
-        ai_error = str(exc)
+    fixed_code = _read_solution(problems_dir, challenge_id, language)
+    regex_vuln_lines = _get_regex_vuln_lines(code, meta, language)
+    ai_analysis, ai_error = _get_ai_analysis(code, language, meta, challenge_id)
 
     if ai_analysis:
         ai_vuln_lines = ai_analysis.get("vuln_lines") or []
@@ -59,6 +79,7 @@ def assemble_report(
     report.update({
         "session_id": session_id,
         "challenge_id": challenge_id,
+        "language": language,
         "title": meta.get("title", challenge_id),
         "canonical_fix": meta.get("canonical_fix", ""),
         "explanation": meta.get("explanation", ""),
@@ -75,3 +96,54 @@ def assemble_report(
         "ai_error": ai_error,
     })
     return report
+
+
+def run_submit_pipeline(
+    session_id: str,
+    challenge_id: str,
+    code: str,
+    language: str,
+    meta: dict,
+    sessions: dict,
+    sessions_lock: threading.Lock,
+    problems_dir: str,
+) -> None:
+    """Background coordinator: build image → validate + sandbox concurrently."""
+
+    def update_session(**kwargs):
+        with sessions_lock:
+            if session_id in sessions:
+                sessions[session_id].update(kwargs)
+
+    try:
+        image_tag = orchestrator.build_image(challenge_id, code, language)
+    except Exception as exc:
+        update_session(status="error", error=f"Image build failed: {exc}")
+        return
+
+    def validation_thread():
+        validation_result = orchestrator.run_validation(challenge_id, image_tag, language)
+        report = assemble_report(
+            session_id=session_id,
+            challenge_id=challenge_id,
+            code=code,
+            language=language,
+            meta=meta,
+            validation_result=validation_result,
+            problems_dir=problems_dir,
+        )
+        update_session(report=report, status="done")
+
+    def sandbox_thread():
+        try:
+            container_id, port = orchestrator.run_sandbox(image_tag, session_id, language)
+            update_session(container_id=container_id, port=port)
+        except Exception as exc:
+            update_session(error=f"Sandbox error: {exc}")
+
+    t1 = threading.Thread(target=validation_thread, daemon=True, name=f"validate-{session_id[:8]}")
+    t2 = threading.Thread(target=sandbox_thread, daemon=True, name=f"sandbox-{session_id[:8]}")
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()

@@ -14,6 +14,25 @@ export function SeverityBadge({ severity }) {
   )
 }
 
+const NUMBER_COLORS = {
+  red:    'bg-red-900/60 border-red-700/60 text-red-400',
+  orange: 'bg-orange-900/60 border-orange-700/60 text-orange-400',
+  slate:  'bg-slate-700 border-slate-600 text-slate-400',
+  blue:   'bg-blue-900/60 border-blue-700/60 text-blue-400',
+}
+
+export function SectionHeader({ number, color = 'slate', title, children }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <span className={`flex items-center justify-center w-6 h-6 rounded-full border text-xs font-bold ${NUMBER_COLORS[color]}`}>
+        {number}
+      </span>
+      <h2 className="text-white font-semibold text-base">{title}</h2>
+      {children}
+    </div>
+  )
+}
+
 export function StepBadge({ n }) {
   const labels = ['①', '②', '③', '④', '⑤']
   return (
@@ -28,7 +47,7 @@ export function TypingIndicator() {
     <div className="flex items-center gap-1 px-4 py-3">
       {[0, 1, 2].map(i => (
         <span
-          key={i}
+          key={`dot-${i}`}
           className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"
           style={{ animationDelay: `${i * 0.15}s` }}
         />
@@ -37,7 +56,7 @@ export function TypingIndicator() {
   )
 }
 
-export function BeforeAfter({ before = '', after = '' }) {
+export function BeforeAfter({ before = '', after = '', language = 'python' }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -48,7 +67,7 @@ export function BeforeAfter({ before = '', after = '' }) {
           </span>
         </div>
         <div className="rounded-lg border border-red-800/40 overflow-hidden">
-          <CodeEditor value={before} readOnly language="python" />
+          <CodeEditor value={before} readOnly language={language} />
         </div>
       </div>
       <div>
@@ -59,7 +78,7 @@ export function BeforeAfter({ before = '', after = '' }) {
           </span>
         </div>
         <div className="rounded-lg border border-green-800/40 overflow-hidden">
-          <CodeEditor value={after} readOnly language="python" />
+          <CodeEditor value={after} readOnly language={language} />
         </div>
       </div>
     </div>

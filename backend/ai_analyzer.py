@@ -3,6 +3,8 @@ import os
 
 import anthropic
 
+MODEL = "claude-sonnet-4-6"
+
 _client = None
 
 
@@ -14,27 +16,15 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def analyze_code_with_ai(
+def _build_analysis_prompt(
     code: str,
     language: str,
     problem_id: str,
     problem_title: str,
-    problem_type: str = "",
-) -> dict:
-    """
-    Ask Claude to locate vulnerable lines and produce educational feedback.
-
-    Returns a dict with keys:
-        vuln_lines              list[int]  1-based line numbers
-        severity                str        "HIGH" | "MEDIUM" | "LOW" | "NONE"
-        vulnerability_explanation str
-        fix_hint                str
-        is_vulnerable           bool
-    Raises on network/parse error — callers should catch and fall back to regex.
-    """
+    problem_type: str,
+) -> str:
     numbered_code = "\n".join(f"{i+1:3d} | {line}" for i, line in enumerate(code.splitlines()))
-
-    prompt = f"""You are a security expert analyzing student code for a secure coding education platform.
+    return f"""You are a security expert analyzing student code for a secure coding education platform.
 You are analyzing code for this specific vulnerability type: {problem_type or problem_id}
 
 Problem: {problem_title} ({problem_id})
@@ -63,38 +53,74 @@ If the code is already secure (uses parameterized queries, proper escaping, etc.
 Code to analyze:
 {numbered_code}"""
 
-    client = _get_client()
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1000,
-        messages=[{"role": "user", "content": prompt}],
-    )
 
-    raw = message.content[0].text.strip()
-
-    # Strip markdown fences if present
+def _parse_analysis_response(raw: str) -> dict:
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
-    raw = raw.strip()
-
-    return json.loads(raw)
+    return json.loads(raw.strip())
 
 
-def chat_with_ai(system_prompt: str, history: list, user_message: str) -> str:
+def analyze_code_with_ai(
+    code: str,
+    language: str,
+    problem_id: str,
+    problem_title: str,
+    problem_type: str = "",
+    client: anthropic.Anthropic | None = None,
+) -> dict:
     """
-    Send a conversational message to Claude with full history context.
+    Returns dict with: vuln_lines, severity, vulnerability_explanation, fix_hint, is_vulnerable.
+    Raises on network/parse error — callers should catch and fall back to regex.
+    """
+    prompt = _build_analysis_prompt(code, language, problem_id, problem_title, problem_type)
+    c = client or _get_client()
+    message = c.messages.create(
+        model=MODEL,
+        max_tokens=1000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return _parse_analysis_response(message.content[0].text.strip())
 
-    history  — list of {"role": "user"|"assistant", "content": str}
-    Returns the assistant reply text.
-    Raises on API/network error — callers should catch.
+
+def build_chat_system_prompt(report: dict | None, language: str) -> str:
+    if report:
+        problem_id = report.get("challenge_id", "unknown")
+        vuln_explanation = report.get("vulnerability_explanation") or report.get("explanation", "")
+        attack_payload = report.get("attack_payload", "")
+        problem_title = report.get("title", problem_id)
+    else:
+        problem_id = "unknown"
+        language = language or "python"
+        vuln_explanation = ""
+        attack_payload = ""
+        problem_title = "unknown"
+
+    return (
+        f"You are a security education assistant for SecureCraft, a secure coding education platform.\n"
+        f"The student just completed the {problem_id} challenge in {language}.\n"
+        f"Their submitted code had this vulnerability: {vuln_explanation}\n"
+        f"The attack payload used was: {attack_payload}\n"
+        f"Your role is to help them deeply understand the security concepts behind this challenge.\n"
+        f"Keep responses concise, educational, and encouraging.\n"
+        f"Use code examples when helpful. Respond in the same language the student uses."
+    )
+
+
+def chat_with_ai(
+    system_prompt: str,
+    history: list,
+    user_message: str,
+    client: anthropic.Anthropic | None = None,
+) -> str:
+    """
+    Returns assistant reply text. Raises on API/network error — callers should catch.
     """
     messages = [*history, {"role": "user", "content": user_message}]
-
-    client = _get_client()
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    c = client or _get_client()
+    message = c.messages.create(
+        model=MODEL,
         max_tokens=1000,
         system=system_prompt,
         messages=messages,

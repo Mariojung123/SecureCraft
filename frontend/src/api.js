@@ -24,16 +24,5 @@ export const getSessionReport = (sessionId) =>
 // ── AI Chat ───────────────────────────────────────────────────────────────────
 
 /** POST /api/chat → { reply, error } */
-export async function sendChatMessage(sessionId, message, history) {
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, message, history }),
-  })
-  return res.json()
-}
-
-// ── Legacy synchronous endpoints (kept for backwards compat) ──────────────────
-export const submitChallenge = (id, code) =>
-  api.post(`/challenges/${id}/submit`, { code }).then(r => r.data)
-export const getReport = (reportId) => api.get(`/reports/${reportId}`).then(r => r.data)
+export const sendChatMessage = (sessionId, message, history) =>
+  api.post('/chat', { session_id: sessionId, message, history }).then(r => r.data)

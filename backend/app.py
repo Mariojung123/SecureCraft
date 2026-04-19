@@ -12,8 +12,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 import sandbox.orchestrator as orchestrator
-from ai_analyzer import chat_with_ai
-from services.submit_service import EXT_MAP, assemble_report
+from ai_analyzer import build_chat_system_prompt, chat_with_ai
+from services.submit_service import EXT_MAP, read_skeleton, run_submit_pipeline
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -79,12 +79,6 @@ def list_challenges() -> list:
     return challenges
 
 
-def _update_session(session_id: str, **kwargs) -> None:
-    with sessions_lock:
-        if session_id in sessions:
-            sessions[session_id].update(kwargs)
-
-
 # ── Challenge routes ──────────────────────────────────────────────────────────
 
 @app.get("/api/challenges")
@@ -99,12 +93,7 @@ def get_challenge(challenge_id):
         return jsonify({"error": "Challenge not found"}), 404
 
     language = request.args.get("language", "python").lower()
-    ext = EXT_MAP.get(language, "py")
-    skeleton_path = os.path.join(PROBLEMS_DIR, challenge_id, f"skeleton_{language}.{ext}")
-    skeleton = ""
-    if os.path.exists(skeleton_path):
-        with open(skeleton_path) as fh:
-            skeleton = fh.read()
+    skeleton = read_skeleton(PROBLEMS_DIR, challenge_id, language)
 
     return jsonify({
         "id": challenge_id,
@@ -126,10 +115,7 @@ def submit():
     """
     Accepts { "challenge_id": str, "code": str }.
     Returns { "session_id": str, "status": "processing" } immediately.
-
-    Two threads run concurrently in the background after the image is built:
-      Thread 1 — Validation: run attack.sh + check.py, store report.
-      Thread 2 — Sandbox: keep a container running, expose it on a host port.
+    Background pipeline: build image → validate + sandbox concurrently.
     """
     data = request.get_json(force=True)
     challenge_id = data.get("challenge_id", "").strip()
@@ -152,60 +138,19 @@ def submit():
             "status": "processing",
             "challenge_id": challenge_id,
             "language": language,
-            "code": code,           # stored so the sandbox page can display it
+            "code": code,
             "report": None,
             "port": None,
             "container_id": None,
             "error": None,
         }
 
-    def coordinator():
-        # ── Phase 1: build the image (shared by both threads) ────────────────
-        try:
-            image_tag = orchestrator.build_image(challenge_id, code, language)
-        except Exception as exc:
-            _update_session(session_id, status="error", error=f"Image build failed: {exc}")
-            return
-
-        # ── Phase 2: validation + sandbox run concurrently ───────────────────
-        validation_done = threading.Event()
-
-        def validation_thread():
-            validation_result = orchestrator.run_validation(challenge_id, image_tag, language)
-            with sessions_lock:
-                sess = sessions.get(session_id, {})
-                submitted_code = sess.get("code", "")
-                lang = sess.get("language", "python")
-
-            report = assemble_report(
-                session_id=session_id,
-                challenge_id=challenge_id,
-                code=submitted_code,
-                language=lang,
-                meta=meta,
-                validation_result=validation_result,
-                problems_dir=PROBLEMS_DIR,
-            )
-            _update_session(session_id, report=report, status="done")
-            validation_done.set()
-
-        def sandbox_thread():
-            try:
-                container_id, port = orchestrator.run_sandbox(image_tag, session_id, language)
-                _update_session(session_id, container_id=container_id, port=port)
-            except Exception as exc:
-                # Sandbox failure is non-fatal; validation result still matters
-                _update_session(session_id, error=f"Sandbox error: {exc}")
-
-        t1 = threading.Thread(target=validation_thread, daemon=True, name=f"validate-{session_id[:8]}")
-        t2 = threading.Thread(target=sandbox_thread, daemon=True, name=f"sandbox-{session_id[:8]}")
-
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
-
-    threading.Thread(target=coordinator, daemon=True, name=f"coord-{session_id[:8]}").start()
+    threading.Thread(
+        target=run_submit_pipeline,
+        args=(session_id, challenge_id, code, language, meta, sessions, sessions_lock, PROBLEMS_DIR),
+        daemon=True,
+        name=f"coord-{session_id[:8]}",
+    ).start()
 
     return jsonify({"session_id": session_id, "status": "processing"})
 
@@ -252,28 +197,8 @@ def chat():
         session = sessions.get(session_id)
 
     report = session.get("report") if session else None
-    if report:
-        problem_id = report.get("challenge_id", "unknown")
-        language = session.get("language", "python")
-        vulnerability_explanation = report.get("vulnerability_explanation") or report.get("explanation", "")
-        attack_payload = report.get("attack_payload", "")
-        problem_title = report.get("title", problem_id)
-    else:
-        problem_id = "unknown"
-        language = "python"
-        vulnerability_explanation = ""
-        attack_payload = ""
-        problem_title = "unknown"
-
-    system_prompt = (
-        f"You are a security education assistant for SecureCraft, a secure coding education platform.\n"
-        f"The student just completed the {problem_id} challenge in {language}.\n"
-        f"Their submitted code had this vulnerability: {vulnerability_explanation}\n"
-        f"The attack payload used was: {attack_payload}\n"
-        f"Your role is to help them deeply understand the security concepts behind this challenge.\n"
-        f"Keep responses concise, educational, and encouraging.\n"
-        f"Use code examples when helpful. Respond in the same language the student uses."
-    )
+    language = session.get("language", "python") if session else "python"
+    system_prompt = build_chat_system_prompt(report, language)
 
     try:
         reply = chat_with_ai(system_prompt, history, user_message)
@@ -311,7 +236,7 @@ def get_session(session_id):
         "challenge_id": session["challenge_id"],
         "language": session.get("language", "python"),
         "code": session.get("code", ""),
-        "port": session["port"],            # None until sandbox container is ready
+        "port": session["port"],
     }
     if session["status"] == "done" and session["report"]:
         response["report"] = session["report"]
@@ -319,7 +244,6 @@ def get_session(session_id):
         response["error"] = session["error"]
 
     return jsonify(response)
-
 
 
 if __name__ == "__main__":

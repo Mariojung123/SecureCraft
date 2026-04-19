@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import CodeEditor from '../components/CodeEditor'
 import AiChat from '../components/AiChat'
 import HighlightedCode from '../components/HighlightedCode'
-import { SeverityBadge, StepBadge, BeforeAfter } from '../components/ReportComponents'
+import { SeverityBadge, SectionHeader, StepBadge, BeforeAfter } from '../components/ReportComponents'
 import { getSessionReport } from '../api'
 
 export default function Report() {
@@ -58,6 +58,7 @@ export default function Report() {
   const passed = report.passed
   const hasFlow = Array.isArray(report.attack_flow) && report.attack_flow.length > 0
   const hasVulnLines = Array.isArray(report.vulnerable_lines) && report.vulnerable_lines.length > 0
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
 
@@ -109,12 +110,7 @@ export default function Report() {
           {/* 1. Vulnerable Code */}
           {report.submitted_code && (
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full
-                                 bg-red-900/60 border border-red-700/60 text-red-400 text-xs font-bold">
-                  1
-                </span>
-                <h2 className="text-white font-semibold text-base">Vulnerable Code</h2>
+              <SectionHeader number="1" color="red" title="Vulnerable Code">
                 <SeverityBadge severity={report.severity} />
                 {hasVulnLines && (
                   <span className="text-xs text-red-400/80 bg-red-900/30 border border-red-800/40
@@ -122,7 +118,7 @@ export default function Report() {
                     {report.vulnerable_lines.length} vulnerable line{report.vulnerable_lines.length > 1 ? 's' : ''} highlighted
                   </span>
                 )}
-              </div>
+              </SectionHeader>
               <p className="text-slate-500 text-xs mb-3">
                 Lines marked <span className="text-red-400 font-semibold">VULN</span> are
                 the root cause of the vulnerability in your submitted code.
@@ -151,13 +147,7 @@ export default function Report() {
           {/* 2. Attack Flow */}
           {hasFlow && (
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full
-                                 bg-orange-900/60 border border-orange-700/60 text-orange-400 text-xs font-bold">
-                  2
-                </span>
-                <h2 className="text-white font-semibold text-base">Attack Flow</h2>
-              </div>
+              <SectionHeader number="2" color="orange" title="Attack Flow" />
               <p className="text-slate-500 text-xs mb-3">
                 Step-by-step breakdown of how the attack exploited your code.
               </p>
@@ -182,13 +172,7 @@ export default function Report() {
 
           {/* 3. Raw attack output */}
           <section className="mb-8">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full
-                               bg-slate-700 border border-slate-600 text-slate-400 text-xs font-bold">
-                3
-              </span>
-              <h2 className="text-white font-semibold text-base">Attack Output</h2>
-            </div>
+            <SectionHeader number="3" color="slate" title="Attack Output" />
             <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono
                             text-xs text-slate-400 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
               {report.attack_output || '(no output)'}
@@ -198,16 +182,11 @@ export default function Report() {
           {/* 4. How to Fix */}
           {(report.fixed_code || report.canonical_fix) && (
             <section className="mb-8">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full
-                                 bg-blue-900/60 border border-blue-700/60 text-blue-400 text-xs font-bold">
-                  4
-                </span>
-                <h2 className="text-white font-semibold text-base">How to Fix</h2>
-              </div>
+              <SectionHeader number="4" color="blue" title="How to Fix" />
               <BeforeAfter
                 before={report.submitted_code ?? ''}
                 after={report.fixed_code || report.canonical_fix}
+                language={report.language ?? 'python'}
               />
               {report.explanation && (
                 <div className="mt-4 bg-blue-950/30 border border-blue-800/40 rounded-xl p-4
@@ -251,7 +230,7 @@ export default function Report() {
                 <h2 className="text-white font-semibold text-base">Your Fix</h2>
               </div>
               <div className="rounded-lg border border-green-800/40 overflow-hidden">
-                <CodeEditor value={report.submitted_code} readOnly language="python" />
+                <CodeEditor value={report.submitted_code} readOnly language={report.language ?? 'python'} />
               </div>
             </section>
           )}
@@ -268,7 +247,7 @@ export default function Report() {
             <section className="mb-8">
               <h2 className="text-white font-semibold text-base mb-3">Reference Solution</h2>
               <div className="rounded-lg border border-slate-700/60 overflow-hidden">
-                <CodeEditor value={report.fixed_code || report.canonical_fix} readOnly language="python" />
+                <CodeEditor value={report.fixed_code || report.canonical_fix} readOnly language={report.language ?? 'python'} />
               </div>
             </section>
           )}

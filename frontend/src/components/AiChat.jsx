@@ -24,8 +24,8 @@ export default function AiChat({ sessionId, report }) {
           ? 'Your fix looks correct — the attack was successfully blocked.'
           : 'The vulnerability is still present in your code.'
     } What would you like to know more about?`
-    setMessages([{ role: 'assistant', content: greeting }])
-  }, [])
+    setMessages([{ id: 'greeting', role: 'assistant', content: greeting }])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const send = async (text) => {
     const trimmed = text.trim()
@@ -33,7 +33,7 @@ export default function AiChat({ sessionId, report }) {
 
     const newHistory = [...messages]
     userHasInteracted.current = true
-    setMessages(prev => [...prev, { role: 'user', content: trimmed }])
+    setMessages(prev => [...prev, { id: `user-${Date.now()}`, role: 'user', content: trimmed }])
     setInput('')
     setTyping(true)
 
@@ -41,10 +41,10 @@ export default function AiChat({ sessionId, report }) {
       const { reply, error } = await sendChatMessage(sessionId, trimmed, newHistory)
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
+        { id: `ai-${Date.now()}`, role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
       ])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: '(Network error — please try again.)' }])
+      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: 'assistant', content: '(Network error — please try again.)' }])
     } finally {
       setTyping(false)
       inputRef.current?.focus()
@@ -67,8 +67,8 @@ export default function AiChat({ sessionId, report }) {
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <div className="flex flex-col gap-3 p-4 overflow-y-auto" style={{ maxHeight: '400px' }}>
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words
                 ${msg.role === 'user'
                   ? 'bg-purple-700 text-white rounded-br-sm'
