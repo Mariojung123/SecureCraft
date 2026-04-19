@@ -10,7 +10,6 @@ def _get_client() -> anthropic.Anthropic:
     global _client
     if _client is None:
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        print(f"[ai_analyzer] API key loaded: {api_key[:10]}... (len={len(api_key)})", flush=True)
         _client = anthropic.Anthropic(api_key=api_key)
     return _client
 

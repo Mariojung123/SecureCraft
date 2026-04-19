@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import threading
 import uuid
 
@@ -13,7 +12,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 import sandbox.orchestrator as orchestrator
-from ai_analyzer import analyze_code_with_ai, chat_with_ai
+from ai_analyzer import chat_with_ai
+from services.submit_service import EXT_MAP, assemble_report
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -47,16 +47,6 @@ sessions_lock = threading.Lock()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-def find_vuln_lines(code: str, patterns: list) -> list:
-    """Scan code line-by-line and return 1-based line numbers matching any pattern."""
-    matched = []
-    for i, line in enumerate(code.splitlines(), start=1):
-        for pattern in patterns:
-            if re.search(pattern, line):
-                matched.append(i)
-                break
-    return matched
 
 
 def load_challenge_meta(challenge_id: str) -> dict | None:
@@ -112,8 +102,7 @@ def get_challenge(challenge_id):
         return jsonify({"error": "Challenge not found"}), 404
 
     language = request.args.get("language", "python").lower()
-    ext_map = {"php": "php", "java": "java", "python": "py"}
-    ext = ext_map.get(language, "py")
+    ext = EXT_MAP.get(language, "py")
     skeleton_path = os.path.join(PROBLEMS_DIR, challenge_id, f"skeleton_{language}.{ext}")
     skeleton = ""
     if os.path.exists(skeleton_path):
@@ -185,65 +174,21 @@ def submit():
         validation_done = threading.Event()
 
         def validation_thread():
-            report = orchestrator.run_validation(challenge_id, image_tag, language)
+            validation_result = orchestrator.run_validation(challenge_id, image_tag, language)
             with sessions_lock:
                 sess = sessions.get(session_id, {})
                 submitted_code = sess.get("code", "")
                 lang = sess.get("language", "python")
-            ext_map = {"python": "py", "php": "php", "java": "java"}
-            ext = ext_map.get(lang, "py")
-            solution_path = os.path.join(PROBLEMS_DIR, challenge_id, f"solution_{lang}.{ext}")
-            fixed_code = ""
-            if os.path.exists(solution_path):
-                with open(solution_path) as fh:
-                    fixed_code = fh.read()
-            lang_patterns = meta.get("vuln_patterns", {})
-            patterns = lang_patterns.get(lang, []) if isinstance(lang_patterns, dict) else lang_patterns
-            vuln_lines = find_vuln_lines(submitted_code, patterns)
 
-            # AI-powered analysis — overrides regex results when successful
-            ai_analysis = None
-            ai_error = None
-            try:
-                ai_analysis = analyze_code_with_ai(
-                    code=submitted_code,
-                    language=lang,
-                    problem_id=challenge_id,
-                    problem_title=meta.get("title", challenge_id),
-                    problem_type=challenge_id,
-                )
-                app.logger.info("AI analysis succeeded: severity=%s vuln_lines=%s",
-                                ai_analysis.get("severity"), ai_analysis.get("vuln_lines"))
-            except Exception as ai_err:
-                ai_error = str(ai_err)
-                app.logger.warning("AI analysis failed (falling back to regex): %s", ai_err)
-
-            if ai_analysis:
-                ai_vuln_lines = ai_analysis.get("vuln_lines") or []
-                final_vuln_lines = ai_vuln_lines if ai_vuln_lines else vuln_lines
-            else:
-                final_vuln_lines = vuln_lines
-
-            report.update({
-                "session_id": session_id,
-                "challenge_id": challenge_id,
-                "title": meta.get("title", challenge_id),
-                "canonical_fix": meta.get("canonical_fix", ""),
-                "explanation": meta.get("explanation", ""),
-                "why_blocked": meta.get("why_blocked", ""),
-                # Educational fields
-                "submitted_code": submitted_code,
-                "fixed_code": fixed_code,
-                "vulnerable_lines": final_vuln_lines,
-                "attack_payload": meta.get("attack_payload", ""),
-                "attack_flow": meta.get("attack_flow", []),
-                # AI-exclusive fields (None when AI unavailable)
-                "vulnerability_explanation": ai_analysis.get("vulnerability_explanation") if ai_analysis else None,
-                "fix_hint": ai_analysis.get("fix_hint") if ai_analysis else None,
-                "severity": ai_analysis.get("severity") if ai_analysis else None,
-                "ai_analysis": ai_analysis,
-                "ai_error": ai_error,
-            })
+            report = assemble_report(
+                session_id=session_id,
+                challenge_id=challenge_id,
+                code=submitted_code,
+                language=lang,
+                meta=meta,
+                validation_result=validation_result,
+                problems_dir=PROBLEMS_DIR,
+            )
             _update_session(session_id, report=report, status="done")
             validation_done.set()
 
