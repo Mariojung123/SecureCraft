@@ -56,6 +56,30 @@ def _get_ai_analysis(code: str, language: str, meta: dict, challenge_id: str) ->
         return None, str(exc)
 
 
+def _resolve_vuln_lines(ai_analysis: dict | None, regex_vuln_lines: list) -> list:
+    if not ai_analysis:
+        return regex_vuln_lines
+    ai_lines = ai_analysis.get("vuln_lines") or []
+    return ai_lines if ai_lines else regex_vuln_lines
+
+
+def _make_updater(session_id: str, sessions: dict, sessions_lock: threading.Lock):
+    def update(**kwargs):
+        with sessions_lock:
+            if session_id in sessions:
+                sessions[session_id].update(kwargs)
+    return update
+
+
+def _run_concurrent(fn1, fn2, name1: str, name2: str) -> None:
+    t1 = threading.Thread(target=fn1, daemon=True, name=name1)
+    t2 = threading.Thread(target=fn2, daemon=True, name=name2)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+
 def assemble_report(
     session_id: str,
     challenge_id: str,
@@ -68,12 +92,7 @@ def assemble_report(
     fixed_code = _read_solution(problems_dir, challenge_id, language)
     regex_vuln_lines = _get_regex_vuln_lines(code, meta, language)
     ai_analysis, ai_error = _get_ai_analysis(code, language, meta, challenge_id)
-
-    if ai_analysis:
-        ai_vuln_lines = ai_analysis.get("vuln_lines") or []
-        final_vuln_lines = ai_vuln_lines if ai_vuln_lines else regex_vuln_lines
-    else:
-        final_vuln_lines = regex_vuln_lines
+    final_vuln_lines = _resolve_vuln_lines(ai_analysis, regex_vuln_lines)
 
     report = dict(validation_result)
     report.update({
@@ -109,41 +128,30 @@ def run_submit_pipeline(
     problems_dir: str,
 ) -> None:
     """Background coordinator: build image → validate + sandbox concurrently."""
-
-    def update_session(**kwargs):
-        with sessions_lock:
-            if session_id in sessions:
-                sessions[session_id].update(kwargs)
+    update = _make_updater(session_id, sessions, sessions_lock)
 
     try:
         image_tag = orchestrator.build_image(challenge_id, code, language)
     except Exception as exc:
-        update_session(status="error", error=f"Image build failed: {exc}")
+        update(status="error", error=f"Image build failed: {exc}")
         return
 
-    def validation_thread():
-        validation_result = orchestrator.run_validation(challenge_id, image_tag, language)
+    def validation():
+        result = orchestrator.run_validation(challenge_id, image_tag, language)
         report = assemble_report(
-            session_id=session_id,
-            challenge_id=challenge_id,
-            code=code,
-            language=language,
-            meta=meta,
-            validation_result=validation_result,
-            problems_dir=problems_dir,
+            session_id=session_id, challenge_id=challenge_id, code=code,
+            language=language, meta=meta, validation_result=result, problems_dir=problems_dir,
         )
-        update_session(report=report, status="done")
+        update(report=report, status="done")
 
-    def sandbox_thread():
+    def sandbox():
         try:
             container_id, port = orchestrator.run_sandbox(image_tag, session_id, language)
-            update_session(container_id=container_id, port=port)
+            update(container_id=container_id, port=port)
         except Exception as exc:
-            update_session(error=f"Sandbox error: {exc}")
+            update(error=f"Sandbox error: {exc}")
 
-    t1 = threading.Thread(target=validation_thread, daemon=True, name=f"validate-{session_id[:8]}")
-    t2 = threading.Thread(target=sandbox_thread, daemon=True, name=f"sandbox-{session_id[:8]}")
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
+    _run_concurrent(
+        validation, sandbox,
+        f"validate-{session_id[:8]}", f"sandbox-{session_id[:8]}",
+    )

@@ -33,7 +33,7 @@ export default function AiChat({ sessionId, report }) {
 
     const newHistory = [...messages]
     userHasInteracted.current = true
-    setMessages(prev => [...prev, { id: `user-${Date.now()}`, role: 'user', content: trimmed }])
+    setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }])
     setInput('')
     setTyping(true)
 
@@ -41,10 +41,10 @@ export default function AiChat({ sessionId, report }) {
       const { reply, error } = await sendChatMessage(sessionId, trimmed, newHistory)
       setMessages(prev => [
         ...prev,
-        { id: `ai-${Date.now()}`, role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
+        { id: crypto.randomUUID(), role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
       ])
     } catch {
-      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: 'assistant', content: '(Network error — please try again.)' }])
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: '(Network error — please try again.)' }])
     } finally {
       setTyping(false)
       inputRef.current?.focus()
