@@ -30,9 +30,6 @@ PROBLEMS_DIR = os.getenv(
 
 # ── In-memory stores ──────────────────────────────────────────────────────────
 
-# Keyed by report_id (legacy synchronous submit flow)
-reports: dict = {}
-
 # Keyed by session_id (async submit flow)
 # {
 #   "status":       "processing" | "done" | "error",
@@ -323,51 +320,6 @@ def get_session(session_id):
 
     return jsonify(response)
 
-
-# ── Legacy synchronous submit (kept for backwards compat) ────────────────────
-
-@app.post("/api/challenges/<challenge_id>/submit")
-def submit_challenge(challenge_id):
-    meta = load_challenge_meta(challenge_id)
-    if not meta:
-        return jsonify({"error": "Challenge not found"}), 404
-
-    data = request.get_json(force=True)
-    code = data.get("code", "")
-    if not code.strip():
-        return jsonify({"error": "No code submitted"}), 400
-
-    try:
-        image_tag = orchestrator.build_image(challenge_id, code)
-        result = orchestrator.run_validation(challenge_id, image_tag)
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
-
-    report_id = str(uuid.uuid4())
-    reports[report_id] = {
-        "report_id": report_id,
-        "challenge_id": challenge_id,
-        "title": meta.get("title", challenge_id),
-        "passed": result["passed"],
-        "attack_output": result["attack_output"],
-        "check_output": result["check_output"],
-        "canonical_fix": meta.get("canonical_fix", ""),
-        "explanation": meta.get("explanation", ""),
-    }
-
-    return jsonify({
-        "passed": result["passed"],
-        "output": result["attack_output"],
-        "report_id": report_id,
-    })
-
-
-@app.get("/api/reports/<report_id>")
-def get_report(report_id):
-    report = reports.get(report_id)
-    if not report:
-        return jsonify({"error": "Report not found"}), 404
-    return jsonify(report)
 
 
 if __name__ == "__main__":

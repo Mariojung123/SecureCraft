@@ -57,7 +57,7 @@ def _problems_dir() -> str:
 _sandboxes: dict = {}
 _sandbox_lock = threading.Lock()
 
-SANDBOX_TTL = 120  # seconds before a sandbox container is auto-removed
+SANDBOX_TTL = 60  # seconds before a sandbox container is auto-removed
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
