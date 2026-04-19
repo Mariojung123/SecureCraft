@@ -24,5 +24,7 @@ export const getSessionReport = (sessionId) =>
 // ── AI Chat ───────────────────────────────────────────────────────────────────
 
 /** POST /api/chat → { reply, error } */
-export const sendChatMessage = (sessionId, message, history) =>
-  api.post('/chat', { session_id: sessionId, message, history }).then(r => r.data)
+export const sendChatMessage = (sessionId, message, history) => {
+  const cleanHistory = history.map(({ role, content }) => ({ role, content }))
+  return api.post('/chat', { session_id: sessionId, message, history: cleanHistory }).then(r => r.data)
+}

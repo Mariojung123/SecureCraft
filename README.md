@@ -137,6 +137,27 @@ Every user submission runs in a Docker container with hardened constraints — *
 
 ---
 
+## 🧪 Testing
+
+Backend tests live in `backend/tests/` and run with pytest — no external services or API keys required.
+
+```bash
+cd backend
+python -m pytest tests/ -v
+```
+
+**42 tests across 3 files:**
+
+| File | Tests | What it covers |
+|---|---|---|
+| `test_submit_service.py` | 21 | `find_vuln_lines` pattern matching, `_resolve_vuln_lines` AI/regex fallback logic, `_get_regex_vuln_lines` dict vs list format, `read_skeleton` file I/O |
+| `test_ai_analyzer.py` | 11 | `_parse_analysis_response` plain JSON / markdown-fenced / invalid input, `build_chat_system_prompt` with full report / None / missing fields |
+| `test_routes.py` | 10 | `GET /api/challenges`, `POST /api/submit` validation + happy path, `GET /api/report` for unknown / processing / done sessions |
+
+All tests use temporary directories and mock Docker/AI calls — safe to run anywhere.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -146,6 +167,10 @@ SecureCraft/
 │   ├── ai_analyzer.py          # analyze_code_with_ai(), chat_with_ai()
 │   ├── sandbox/
 │   │   └── orchestrator.py     # Docker SDK container lifecycle management
+│   ├── tests/
+│   │   ├── test_submit_service.py
+│   │   ├── test_ai_analyzer.py
+│   │   └── test_routes.py
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
