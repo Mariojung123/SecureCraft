@@ -2,6 +2,8 @@
 
 > **A hands-on secure coding education platform** — learn to defend against real-world web vulnerabilities by writing, testing, and fixing code in an isolated sandbox environment, guided by AI-powered analysis.
 
+📄 **[View Full Project Specification →](https://mariojung123.github.io/SecureCraft/securecraft-spec-en.html)**
+
 ---
 
 ## ✨ What is SecureCraft?
