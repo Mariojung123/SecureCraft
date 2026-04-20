@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureCraft — Development Specification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #080c12;
+      --surface:      #0d1420;
+      --surface-sub:  #111926;
+      --surface-hi:   #162030;
+      --text:         #dce8f8;
+      --text-muted:   #5a7a9e;
+      --text-dim:     #2e4a68;
+      --accent:       #00c896;
+      --accent-dim:   rgba(0, 200, 150, 0.12);
+      --red:          #ff4b5c;
+      --red-dim:      rgba(255, 75, 92, 0.12);
+      --orange:       #ff8c42;
+      --orange-dim:   rgba(255, 140, 66, 0.12);
+      --yellow:       #ffd166;
+      --yellow-dim:   rgba(255, 209, 102, 0.1);
+      --blue:         #4d9de0;
+      --blue-dim:     rgba(77, 157, 224, 0.12);
+      --border:       #1a2840;
+      --border-hi:    #243550;
+
+      --font-head: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --space-xs:  4px;
+      --space-sm:  8px;
+      --space-md:  16px;
+      --space-lg:  24px;
+      --space-xl:  32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: var(--space-4xl) var(--space-3xl);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .hero-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 70% at 15% 50%, rgba(0, 200, 150, 0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 980px; margin: 0 auto; position: relative; }
+
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-lg);
+      display: flex; align-items: center; gap: var(--space-sm);
+    }
+    .hero-eyebrow::before {
+      content: '>';
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .hero h1 {
+      font-family: var(--font-head);
+      font-size: clamp(40px, 6vw, 76px);
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-xl);
+      color: var(--text);
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .hero h1 .dim { color: var(--text-muted); }
+
+    .hero-tagline {
+      font-size: clamp(14px, 1.8vw, 18px);
+      font-weight: 300;
+      color: var(--text-muted);
+      max-width: 620px;
+      line-height: 1.7;
+      margin-bottom: var(--space-2xl);
+    }
+
+    .hero-badges { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: var(--space-2xl); }
+    .hero-badge {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      padding: 5px 12px; border-radius: 3px;
+      border: 1px solid var(--border-hi);
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+    .hero-badge.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+    .hero-meta { display: flex; gap: var(--space-xl); flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: var(--space-xl); }
+    .hero-meta-item { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .hero-meta-item .label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim);
+    }
+    .hero-meta-item .value {
+      font-family: var(--font-head); font-size: 14px;
+      font-weight: 600; color: var(--text-muted);
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      max-width: 980px; margin: 0 auto;
+      padding: var(--space-4xl) var(--space-xl);
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: var(--space-4xl);
+      align-items: start;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar { position: sticky; top: var(--space-xl); }
+    .sidebar-title {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: var(--space-md);
+    }
+    .sidebar nav { display: flex; flex-direction: column; }
+    .sidebar nav a {
+      font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+      text-decoration: none; padding: 6px 0;
+      border-left: 2px solid var(--border);
+      padding-left: var(--space-md);
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: var(--space-sm);
+    }
+    .sidebar nav a .num { color: var(--text-dim); font-size: 10px; }
+    .sidebar nav a:hover { color: var(--accent); border-left-color: var(--accent); }
+
+    /* ── CONTENT ── */
+    .content { min-width: 0; }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: var(--space-4xl); scroll-margin-top: var(--space-xl); }
+    .section-header { margin-bottom: var(--space-xl); }
+    .section-eyebrow {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: var(--space-sm);
+      display: flex; align-items: center; gap: var(--space-sm);
+    }
+    .section-eyebrow .bracket { color: var(--text-dim); }
+    .section-title {
+      font-family: var(--font-head); font-size: clamp(22px, 3vw, 32px);
+      font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: var(--text);
+    }
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: var(--space-2xl) 0; }
+
+    /* ── PROBLEM GRID ── */
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin: var(--space-xl) 0; }
+    .problem-item {
+      background: var(--surface); padding: var(--space-lg); border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+    }
+    .problem-item .tag {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--red);
+      margin-bottom: var(--space-sm);
+    }
+    .problem-item strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: var(--space-xs); }
+    .problem-item p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── STAT ROW ── */
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); margin: var(--space-xl) 0; }
+    .stat-item { text-align: center; padding: var(--space-lg); background: var(--surface); border: 1px solid var(--border); }
+    .stat-num { font-family: var(--font-mono); font-size: 34px; font-weight: 700; color: var(--accent); letter-spacing: -0.03em; line-height: 1; margin-bottom: var(--space-xs); }
+    .stat-label { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ── TERMINAL BLOCK ── */
+    .terminal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 4px; overflow: hidden; margin: var(--space-xl) 0;
+    }
+    .terminal-bar {
+      background: var(--surface-hi); padding: var(--space-sm) var(--space-md);
+      display: flex; align-items: center; gap: var(--space-sm);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .terminal-dot.red { background: #ff4b5c; }
+    .terminal-dot.yellow { background: #ffd166; }
+    .terminal-dot.green { background: #2ed573; }
+    .terminal-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-left: auto; margin-right: auto; }
+    .terminal-body { padding: var(--space-lg); font-family: var(--font-mono); font-size: 13px; line-height: 1.8; }
+    .t-prompt { color: var(--text-dim); }
+    .t-cmd { color: var(--text-muted); }
+    .t-out { color: var(--accent); }
+    .t-comment { color: var(--text-dim); }
+    .t-err { color: var(--red); }
+    .t-warn { color: var(--orange); }
+
+    /* ── LEARNING FLOW ── */
+    .learn-flow { display: flex; align-items: stretch; gap: 0; margin: var(--space-xl) 0; overflow-x: auto; }
+    .learn-step {
+      flex: 1; min-width: 110px; background: var(--surface); border: 1px solid var(--border);
+      border-right: none; padding: var(--space-lg) var(--space-md); text-align: center;
+      position: relative;
+    }
+    .learn-step:last-child { border-right: 1px solid var(--border); }
+    .learn-step::after {
+      content: '›'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+      color: var(--text-dim); font-size: 18px; z-index: 1;
+    }
+    .learn-step:last-child::after { display: none; }
+    .learn-step .step-num {
+      font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+      margin-bottom: var(--space-xs);
+    }
+    .learn-step .step-icon { font-size: 20px; margin-bottom: var(--space-xs); }
+    .learn-step .step-label { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .learn-step .step-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+    .learn-step.highlight { background: var(--accent-dim); border-color: var(--accent); }
+    .learn-step.highlight .step-label { color: var(--accent); }
+
+    /* ── ARCH LAYERS ── */
+    .arch-stack { display: flex; flex-direction: column; gap: var(--space-sm); margin: var(--space-xl) 0; }
+    .arch-layer { display: grid; grid-template-columns: 130px 1fr; gap: var(--space-md); align-items: start; }
+    .arch-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim);
+      padding-top: 10px; text-align: right;
+    }
+    .arch-modules { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+    .arch-mod {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      padding: 5px 10px; border: 1px solid var(--border);
+    }
+    .arch-mod.fe  { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+    .arch-mod.api { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .arch-mod.svc { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+    .arch-mod.box { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+    .arch-mod.ai  { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+    .arch-connector { padding-left: 145px; color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; padding-bottom: 2px; }
+
+    /* ── CHALLENGE TABLE ── */
+    .challenge-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: var(--space-xl) 0; }
+    .challenge-table th {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim);
+      text-align: left; padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--border);
+    }
+    .challenge-table td { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .challenge-table td:first-child { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .challenge-table td.name { font-weight: 600; color: var(--text); font-family: var(--font-body); }
+    .challenge-table tr:hover td { background: var(--surface); }
+
+    /* ── SEVERITY BADGE ── */
+    .sev { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 8px; letter-spacing: 0.08em; }
+    .sev.high   { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+    .sev.medium { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); }
+    .sev.easy   { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+
+    /* ── FEATURE CARDS ── */
+    .feature-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: var(--space-xl);
+      display: grid; grid-template-columns: 44px 1fr; gap: var(--space-lg);
+    }
+    .feature-card.red-border { border-left-color: var(--red); }
+    .feature-card.blue-border { border-left-color: var(--blue); }
+    .feature-card.orange-border { border-left-color: var(--orange); }
+    .feature-num {
+      font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+      color: var(--text-dim); line-height: 1;
+    }
+    .feature-body h3 { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: var(--space-sm); }
+    .feature-body p { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: var(--space-sm); }
+    .tag-row { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+    .ftag {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 3px 9px;
+      border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .ftag.green  { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .ftag.red    { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+    .ftag.blue   { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+    .ftag.orange { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+
+    /* ── TECH STACK ── */
+    .stack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+    .stack-item { padding: var(--space-lg); background: var(--surface); border: 1px solid var(--border); }
+    .stack-item .layer {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: var(--space-sm);
+    }
+    .stack-item .tech { font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: var(--space-xs); }
+    .stack-item .reason { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── SESSION SCHEMA ── */
+    .schema-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+    .schema-block { background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+    .schema-head { display: grid; grid-template-columns: 220px 1fr; padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border); align-items: center; gap: var(--space-md); }
+    .schema-name { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--accent); }
+    .schema-desc { font-size: 13px; color: var(--text-muted); }
+    .schema-fields { padding: var(--space-sm) var(--space-lg) var(--space-md); display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+    .sfield {
+      font-family: var(--font-mono); font-size: 11px; padding: 2px 8px;
+      background: var(--surface-hi); color: var(--text-muted); border: 1px solid var(--border);
+    }
+    .sfield.key  { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+    .sfield.enum { color: var(--orange); border-color: var(--orange); background: var(--orange-dim); }
+    .sfield.opt  { color: var(--text-dim); }
+
+    /* ── DOCKER CONSTRAINTS ── */
+    .constraint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin: var(--space-xl) 0; }
+    .constraint-item { background: var(--surface); border: 1px solid var(--border); padding: var(--space-md) var(--space-lg); display: flex; flex-direction: column; gap: 4px; }
+    .constraint-key { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .constraint-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--red); }
+    .constraint-why { font-size: 12px; color: var(--text-muted); }
+
+    /* ── API TABLE ── */
+    .api-group-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim);
+      margin-top: var(--space-xl); margin-bottom: var(--space-sm);
+      padding-left: var(--space-sm); border-left: 2px solid var(--accent);
+      padding-left: var(--space-md);
+    }
+    .api-group-label:first-child { margin-top: 0; }
+    .api-list { display: flex; flex-direction: column; gap: 2px; }
+    .api-row {
+      display: grid; grid-template-columns: 72px 1fr auto;
+      gap: var(--space-md); padding: 10px var(--space-lg);
+      background: var(--surface); border: 1px solid var(--border);
+      align-items: center;
+    }
+    .api-method { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 3px 6px; text-align: center; }
+    .api-method.get    { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+    .api-method.post   { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+    .api-method.delete { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+    .api-path { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+    .api-desc { font-size: 12px; color: var(--text-muted); text-align: right; }
+
+    /* ── COMP TABLE ── */
+    .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .comp-table th {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
+      text-align: left; padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--border);
+    }
+    .comp-table td { padding: var(--space-md); border-bottom: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+    .comp-table td:first-child { font-weight: 600; color: var(--text); font-family: var(--font-head); }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table tr.ours td { background: var(--accent-dim); }
+    .comp-table tr.ours td:first-child { color: var(--accent); }
+
+    /* ── PORTFOLIO ── */
+    .portfolio-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm); }
+    .portfolio-item { padding: var(--space-xl) var(--space-lg); background: var(--surface); border: 1px solid var(--border); border-top: 2px solid var(--accent); }
+    .portfolio-item .icon { font-size: 28px; margin-bottom: var(--space-md); }
+    .portfolio-item h4 { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: var(--space-sm); }
+    .portfolio-item p { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── TEXT ── */
+    p { margin-bottom: var(--space-md); }
+    p:last-child { margin-bottom: 0; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-sm); margin: var(--space-md) 0; }
+    ul li { font-size: 13px; color: var(--text-muted); padding-left: var(--space-lg); position: relative; line-height: 1.7; }
+    ul li::before { content: '//'; position: absolute; left: 0; color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; top: 3px; }
+    ul li strong { color: var(--text); font-weight: 600; }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      color: var(--text-muted); padding: var(--space-2xl) var(--space-xl);
+      text-align: center; font-family: var(--font-mono); font-size: 12px;
+    }
+    .footer strong { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; padding: var(--space-xl) var(--space-md); gap: var(--space-2xl); }
+      .sidebar { display: none; }
+      .hero { padding: var(--space-2xl) var(--space-lg); }
+      .problem-grid, .stack-grid, .portfolio-grid, .constraint-grid { grid-template-columns: 1fr; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .api-row { grid-template-columns: 72px 1fr; }
+      .api-desc { display: none; }
+      .schema-head { grid-template-columns: 1fr; }
+      .arch-layer { grid-template-columns: 1fr; }
+      .arch-connector { padding-left: var(--space-md); }
+      .learn-flow { flex-direction: column; }
+      .learn-step { border-right: 1px solid var(--border); border-bottom: none; }
+      .learn-step:last-child { border-bottom: 1px solid var(--border); }
+      .learn-step::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <p class="hero-eyebrow">dev.spec — 2026 — portfolio project</p>
+    <h1><em>SecureCraft</em><br><span class="dim">Learn Security</span><br>by Breaking It</h1>
+    <p class="hero-tagline">Write vulnerable code. Attack it in a sandboxed container. Get AI-powered feedback from Claude. Ten OWASP Top 10 challenges — each one a real exploit, each fix a real defense.</p>
+    <div class="hero-badges">
+      <span class="hero-badge accent">OWASP Top 10</span>
+      <span class="hero-badge">Docker Sandbox</span>
+      <span class="hero-badge">Claude AI Analysis</span>
+      <span class="hero-badge">Monaco Editor</span>
+      <span class="hero-badge">42 Tests Passing</span>
+    </div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="label">Type</span>
+        <span class="value">Web Application</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Purpose</span>
+        <span class="value">Portfolio Project</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Core Tech</span>
+        <span class="value">Claude API + Docker</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Target</span>
+        <span class="value">Security Learners</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Languages</span>
+        <span class="value">Python · PHP · Java</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <p class="sidebar-title">// contents</p>
+    <nav>
+      <a href="#motivation"><span class="num">01</span> Motivation</a>
+      <a href="#concept"><span class="num">02</span> Core Concept</a>
+      <a href="#target"><span class="num">03</span> Target Users</a>
+      <a href="#flow"><span class="num">04</span> Learning Flow</a>
+      <a href="#architecture"><span class="num">05</span> Architecture</a>
+      <a href="#features"><span class="num">06</span> MVP Features</a>
+      <a href="#stack"><span class="num">07</span> Tech Stack</a>
+      <a href="#schema"><span class="num">08</span> Session Schema</a>
+      <a href="#security"><span class="num">09</span> Sandbox Security</a>
+      <a href="#api"><span class="num">10</span> API Reference</a>
+      <a href="#competition"><span class="num">11</span> Competition</a>
+      <a href="#portfolio"><span class="num">12</span> Portfolio Value</a>
+    </nav>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- 01 MOTIVATION -->
+    <section class="section" id="motivation">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>01<span class="bracket">]</span> Why We Build</div>
+        <h2 class="section-title">Motivation</h2>
+      </div>
+
+      <p>Most security courses teach theory. Learners read about SQL injection but never inject anything. They memorize OWASP categories without ever writing a payload. The gap between knowing and doing is where developers ship vulnerable code.</p>
+
+      <div class="problem-grid">
+        <div class="problem-item">
+          <div class="tag">PROBLEM_01</div>
+          <strong>Theory Without Practice</strong>
+          <p>Reading about XSS doesn't build the reflex to escape user input. Muscle memory requires repetition — real inputs, real exploits.</p>
+        </div>
+        <div class="problem-item">
+          <div class="tag">PROBLEM_02</div>
+          <strong>No Safe Attack Environment</strong>
+          <p>Learners can't freely practice offensive techniques. Setting up a local vulnerable app is complex; cloud VMs cost money.</p>
+        </div>
+        <div class="problem-item">
+          <div class="tag">PROBLEM_03</div>
+          <strong>Generic Feedback</strong>
+          <p>Existing tools tell you "this code is vulnerable" but rarely explain the exact line, how an attacker exploits it, or how to fix it.</p>
+        </div>
+        <div class="problem-item">
+          <div class="tag">PROBLEM_04</div>
+          <strong>Zero AI Guidance</strong>
+          <p>No interactive AI tutor that understands the specific code submitted, explains the vulnerability in context, and answers follow-up questions.</p>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-num">10</div>
+          <div class="stat-label">OWASP Top 10<br>categories covered</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">3</div>
+          <div class="stat-label">languages per challenge<br>Python · PHP · Java</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">60s</div>
+          <div class="stat-label">live sandbox<br>TTL per session</div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 02 CORE CONCEPT -->
+    <section class="section" id="concept">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>02<span class="bracket">]</span> Core Concept</div>
+        <h2 class="section-title">Learn by Breaking</h2>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <span class="terminal-title">securecraft — challenge: sql_injection_login</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="t-prompt">$</span> <span class="t-cmd">submit --challenge sql_injection_login --lang python</span></div>
+          <div><span class="t-out">→ session_id: abc123 | status: processing</span></div>
+          <div><span class="t-prompt">$</span> <span class="t-cmd">poll --session abc123</span></div>
+          <div><span class="t-out">→ sandbox live at localhost:49312</span></div>
+          <div><span class="t-out">→ AI report ready</span></div>
+          <div><span class="t-err">  ✗ VULNERABLE — severity: HIGH</span></div>
+          <div><span class="t-warn">  line 7: cursor.execute("SELECT * FROM users WHERE name='" + name + "'")</span></div>
+          <div><span class="t-out">  attack_payload: "' OR '1'='1"</span></div>
+          <div><span class="t-comment">  fix: use parameterized queries — cursor.execute(query, (name,))</span></div>
+        </div>
+      </div>
+
+      <p>The core loop: write code, see it attacked in a real container, read Claude's exact-line analysis, chat with the AI tutor about what went wrong. The experience is adversarial by design — the same code gets both analyzed for vulnerabilities and actively exploited in the sandbox simultaneously.</p>
+
+      <ul>
+        <li><strong>Adversarial learning</strong> — submit code → AI analyzes AND attack script runs in parallel</li>
+        <li><strong>Live exploit</strong> — real HTTP request with attack payload, not a simulation</li>
+        <li><strong>Contextual AI</strong> — Claude's report knows your exact submission and guides your fix</li>
+        <li><strong>Air-gapped sandbox</strong> — Docker container with network=none; no internet escape possible</li>
+      </ul>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 03 TARGET USERS -->
+    <section class="section" id="target">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>03<span class="bracket">]</span> Target Users</div>
+        <h2 class="section-title">Who It's For</h2>
+      </div>
+
+      <ul>
+        <li><strong>CS students</strong> — who've taken a security course but want to go beyond flashcards</li>
+        <li><strong>Bootcamp graduates</strong> — junior developers who write web backends and need practical secure coding habits</li>
+        <li><strong>Self-taught developers</strong> — building side projects and want to audit their own code patterns</li>
+        <li><strong>Security beginners</strong> — exploring ethical hacking with a safe, legal, zero-setup environment</li>
+      </ul>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 04 LEARNING FLOW -->
+    <section class="section" id="flow">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>04<span class="bracket">]</span> Learning Flow</div>
+        <h2 class="section-title">How It Works</h2>
+      </div>
+
+      <div class="learn-flow">
+        <div class="learn-step">
+          <div class="step-num">01</div>
+          <div class="step-icon">🎯</div>
+          <div class="step-label">Select Challenge</div>
+          <div class="step-sub">Choose OWASP category & language</div>
+        </div>
+        <div class="learn-step">
+          <div class="step-num">02</div>
+          <div class="step-icon">📝</div>
+          <div class="step-label">Read &amp; Code</div>
+          <div class="step-sub">Monaco editor with skeleton code</div>
+        </div>
+        <div class="learn-step highlight">
+          <div class="step-num">03</div>
+          <div class="step-icon">🚀</div>
+          <div class="step-label">Submit</div>
+          <div class="step-sub">AI analysis + sandbox launch in parallel</div>
+        </div>
+        <div class="learn-step">
+          <div class="step-num">04</div>
+          <div class="step-icon">💥</div>
+          <div class="step-label">Attack Live</div>
+          <div class="step-sub">Inject payloads into iframe sandbox</div>
+        </div>
+        <div class="learn-step">
+          <div class="step-num">05</div>
+          <div class="step-icon">🤖</div>
+          <div class="step-label">AI Report</div>
+          <div class="step-sub">Severity badge, vuln lines, fix hint</div>
+        </div>
+        <div class="learn-step">
+          <div class="step-num">06</div>
+          <div class="step-icon">💬</div>
+          <div class="step-label">AI Chat</div>
+          <div class="step-sub">Context-aware Q&amp;A on your code</div>
+        </div>
+      </div>
+
+      <ul>
+        <li><strong>Parallel execution</strong> — AI vulnerability analysis and Docker sandbox startup run concurrently on submit; first result ready in under 5 seconds</li>
+        <li><strong>Async polling</strong> — submit returns a session_id immediately; UI polls GET /api/sessions/:id until status = "done"</li>
+        <li><strong>No setup</strong> — Docker images are pre-built per challenge; no local install needed beyond the app itself</li>
+      </ul>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 05 ARCHITECTURE -->
+    <section class="section" id="architecture">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>05<span class="bracket">]</span> System Design</div>
+        <h2 class="section-title">Architecture</h2>
+      </div>
+
+      <p>Four-layer system. Frontend never touches Docker or AI directly — all orchestration happens in the backend service layer with a strict separation between HTTP handling, business logic, sandbox management, and AI calls.</p>
+
+      <div class="arch-stack">
+        <div class="arch-layer">
+          <div class="arch-label">Frontend</div>
+          <div class="arch-modules">
+            <span class="arch-mod fe">ChallengeList.jsx</span>
+            <span class="arch-mod fe">ChallengeDetail.jsx</span>
+            <span class="arch-mod fe">Sandbox.jsx</span>
+            <span class="arch-mod fe">Report.jsx</span>
+            <span class="arch-mod fe">CodeEditor.jsx</span>
+            <span class="arch-mod fe">AiChat.jsx</span>
+          </div>
+        </div>
+        <div class="arch-connector">↓ axios via api.js · polls /api/sessions/:id until done</div>
+        <div class="arch-layer">
+          <div class="arch-label">API Routes</div>
+          <div class="arch-modules">
+            <span class="arch-mod api">/api/challenges</span>
+            <span class="arch-mod api">/api/submit</span>
+            <span class="arch-mod api">/api/sessions/:id</span>
+            <span class="arch-mod api">/api/report/:id</span>
+            <span class="arch-mod api">/api/attack</span>
+            <span class="arch-mod api">/api/chat</span>
+          </div>
+        </div>
+        <div class="arch-connector">↓ validates request → dispatches to service layer</div>
+        <div class="arch-layer">
+          <div class="arch-label">Services</div>
+          <div class="arch-modules">
+            <span class="arch-mod svc">submit_service.py</span>
+            <span class="arch-mod svc">ai_analyzer.py</span>
+            <span class="arch-mod svc">orchestrator.py</span>
+          </div>
+        </div>
+        <div class="arch-connector">↓ concurrent threads: AI analysis ‖ Docker sandbox build+run</div>
+        <div class="arch-layer">
+          <div class="arch-label">Runtime</div>
+          <div class="arch-modules">
+            <span class="arch-mod box">Docker SDK</span>
+            <span class="arch-mod box">attack.sh</span>
+            <span class="arch-mod box">check.py</span>
+            <span class="arch-mod ai">Claude API</span>
+          </div>
+        </div>
+      </div>
+
+      <ul>
+        <li><strong>Submission pipeline</strong> — submit_service runs two concurrent threads: (1) build_image → run_validation via attack.sh, (2) run_sandbox for live iframe; results merged into session dict</li>
+        <li><strong>AI + regex fallback</strong> — ai_analyzer calls Claude for vulnerability analysis; if JSON parse fails, falls back to regex-based vuln_patterns from meta.json</li>
+        <li><strong>Session store</strong> — in-memory dict with threading.Lock; session lifecycle: processing → done / error → auto-cleanup after TTL</li>
+        <li><strong>Problems directory</strong> — each challenge is self-contained: meta.json, skeleton code, solution, Dockerfiles, attack.sh, check.py</li>
+      </ul>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 06 MVP FEATURES -->
+    <section class="section" id="features">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>06<span class="bracket">]</span> MVP Features</div>
+        <h2 class="section-title">What Gets Built</h2>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-card">
+          <div class="feature-num">01</div>
+          <div class="feature-body">
+            <h3>10 OWASP Top 10 Challenges</h3>
+            <p>Each challenge ships with skeleton code in Python, PHP, and Java. The skeleton is intentionally vulnerable — learners write the defensive version. Every challenge includes attack payloads, solution files, and a check.py for VULNERABLE/SECURE verdict.</p>
+            <div class="challenge-table-wrapper" style="overflow-x:auto;">
+              <table class="challenge-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Challenge</th>
+                    <th>Category</th>
+                    <th>Difficulty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>01</td><td class="name">Command Injection</td><td>OS Security</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>02</td><td class="name">SQL Injection (Login)</td><td>Database</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>03</td><td class="name">SQL Injection (Search)</td><td>Database</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>04</td><td class="name">XSS Reflected</td><td>Web</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>05</td><td class="name">XSS Stored</td><td>Web</td><td><span class="sev high">HARD</span></td></tr>
+                  <tr><td>06</td><td class="name">Path Traversal</td><td>File System</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>07</td><td class="name">Hardcoded Credentials</td><td>Secret Mgmt</td><td><span class="sev easy">EASY</span></td></tr>
+                  <tr><td>08</td><td class="name">IDOR (User Data)</td><td>Access Control</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                  <tr><td>09</td><td class="name">Missing Rate Limiting</td><td>API Security</td><td><span class="sev easy">EASY</span></td></tr>
+                  <tr><td>10</td><td class="name">Weak Password Hashing</td><td>Cryptography</td><td><span class="sev medium">MEDIUM</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tag-row">
+              <span class="ftag">Python</span>
+              <span class="ftag">PHP</span>
+              <span class="ftag">Java</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card blue-border">
+          <div class="feature-num">02</div>
+          <div class="feature-body">
+            <h3>Monaco Editor — VS Code Quality in Browser</h3>
+            <p>Skeleton code loads directly into a Monaco Editor instance (same engine as VS Code). Syntax highlighting, bracket matching, and line numbers out of the box — no installation, no friction. Learners write defensive code the same way they'd write production code.</p>
+            <div class="tag-row">
+              <span class="ftag blue">Monaco Editor 4.7</span>
+              <span class="ftag">Syntax Highlight</span>
+              <span class="ftag">Multi-language</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card red-border">
+          <div class="feature-num">03</div>
+          <div class="feature-body">
+            <h3>Docker Sandbox — Real Exploit, Safe Environment</h3>
+            <p>Submitted code runs in a hardened Docker container: network=none, read-only filesystem, 128 MB memory cap, all Linux capabilities dropped. The attack.sh script fires real HTTP payloads at the running container and returns VULNERABLE or SECURE. The live sandbox iframe lets learners manually test their own payloads too.</p>
+            <div class="tag-row">
+              <span class="ftag red">network=none</span>
+              <span class="ftag red">128MB limit</span>
+              <span class="ftag red">no-new-privileges</span>
+              <span class="ftag red">60s TTL</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-num">04</div>
+          <div class="feature-body">
+            <h3>Claude AI Vulnerability Analysis</h3>
+            <p>Claude receives the submitted code and challenge context, then returns a structured JSON report: is_vulnerable flag, severity badge (HIGH/MEDIUM/LOW/NONE), the exact vulnerable line numbers, a plain-English explanation of the exploit, the attack payload used, and a specific fix hint. Falls back to regex pattern matching if JSON parsing fails.</p>
+            <div class="tag-row">
+              <span class="ftag green">Claude API</span>
+              <span class="ftag">Vuln Lines</span>
+              <span class="ftag">Severity Badge</span>
+              <span class="ftag">Fix Hint</span>
+              <span class="ftag">Regex Fallback</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card orange-border">
+          <div class="feature-num">05</div>
+          <div class="feature-body">
+            <h3>Contextual AI Chat</h3>
+            <p>After the report loads, learners can ask Claude follow-up questions. The system prompt is built from the AI report — Claude knows the challenge, the submitted code, the vulnerability found, and the severity. Multi-turn conversation history injected each round. "Why is line 7 dangerous?", "Show me a safer version" — all answered in context.</p>
+            <div class="tag-row">
+              <span class="ftag green">Claude API</span>
+              <span class="ftag">Report Context</span>
+              <span class="ftag">Multi-turn</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 07 TECH STACK -->
+    <section class="section" id="stack">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>07<span class="bracket">]</span> Tech Stack</div>
+        <h2 class="section-title">Technology Choices</h2>
+      </div>
+
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="layer">Frontend</div>
+          <div class="tech">React 19 + Vite + Tailwind</div>
+          <div class="reason">Functional components + hooks only. Monaco Editor for VS Code-quality code input. Axios for async polling against the session endpoint.</div>
+        </div>
+        <div class="stack-item">
+          <div class="layer">Backend</div>
+          <div class="tech">Flask 3.1 (Python 3.11)</div>
+          <div class="reason">Official Anthropic Python SDK. Native Docker SDK integration. threading for concurrent AI + sandbox execution on submit.</div>
+        </div>
+        <div class="stack-item">
+          <div class="layer">Sandbox</div>
+          <div class="tech">Docker + Docker SDK</div>
+          <div class="reason">Full container lifecycle management: image build, run, attack, auto-cleanup. Per-challenge Dockerfiles for Python, PHP, and Java. attack.sh scripts for automated exploit verification.</div>
+        </div>
+        <div class="stack-item">
+          <div class="layer">AI</div>
+          <div class="tech">Claude API (Sonnet 4.6)</div>
+          <div class="reason">Structured JSON vulnerability reports with exact line numbers. Context-aware tutoring chat built from the report. Regex fallback ensures zero silent failures.</div>
+        </div>
+        <div class="stack-item">
+          <div class="layer">Database</div>
+          <div class="tech">In-memory Sessions + MariaDB</div>
+          <div class="reason">Session data stored in a thread-safe Python dict for the current MVP. MariaDB provisioned via Docker Compose for future auth + progress tracking.</div>
+        </div>
+        <div class="stack-item">
+          <div class="layer">Testing</div>
+          <div class="tech">pytest — 42 tests</div>
+          <div class="reason">Unit tests for AI JSON parsing, regex fallback, route responses. Docker and Claude calls fully mocked — tests run without external dependencies.</div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 08 SESSION SCHEMA -->
+    <section class="section" id="schema">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>08<span class="bracket">]</span> Data Model</div>
+        <h2 class="section-title">Session Schema</h2>
+      </div>
+
+      <p>No traditional ORM — current MVP uses an in-memory thread-safe dict keyed by session_id. Two registries: the submission session store and the Docker sandbox registry.</p>
+
+      <div class="schema-list">
+        <div class="schema-block">
+          <div class="schema-head">
+            <div class="schema-name">sessions[session_id]</div>
+            <div class="schema-desc">Submission lifecycle state — created on POST /api/submit, polled until done</div>
+          </div>
+          <div class="schema-fields">
+            <span class="sfield key">session_id</span>
+            <span class="sfield enum">status: processing|done|error</span>
+            <span class="sfield">challenge_id</span>
+            <span class="sfield">language</span>
+            <span class="sfield">code</span>
+            <span class="sfield">port nullable</span>
+            <span class="sfield">container_id nullable</span>
+            <span class="sfield opt">report nullable</span>
+            <span class="sfield opt">error nullable</span>
+          </div>
+        </div>
+
+        <div class="schema-block">
+          <div class="schema-head">
+            <div class="schema-name">report{}</div>
+            <div class="schema-desc">Claude AI analysis result — nested inside session once status = done</div>
+          </div>
+          <div class="schema-fields">
+            <span class="sfield">challenge_id</span>
+            <span class="sfield">title</span>
+            <span class="sfield enum">is_vulnerable: bool</span>
+            <span class="sfield enum">severity: HIGH|MEDIUM|LOW|NONE</span>
+            <span class="sfield">vuln_lines: [int]</span>
+            <span class="sfield">vulnerability_explanation</span>
+            <span class="sfield">fix_hint</span>
+            <span class="sfield">attack_payload</span>
+            <span class="sfield">attack_result</span>
+          </div>
+        </div>
+
+        <div class="schema-block">
+          <div class="schema-head">
+            <div class="schema-name">_sandboxes[session_id]</div>
+            <div class="schema-desc">Live Docker container registry — auto-cleanup via threading.Timer after 60s TTL</div>
+          </div>
+          <div class="schema-fields">
+            <span class="sfield key">session_id</span>
+            <span class="sfield">container_id</span>
+            <span class="sfield">port</span>
+            <span class="sfield enum">timer: threading.Timer (60s TTL)</span>
+          </div>
+        </div>
+
+        <div class="schema-block">
+          <div class="schema-head">
+            <div class="schema-name">meta.json</div>
+            <div class="schema-desc">Per-challenge static config — defines patterns, payloads, skeleton, Dockerfile targets</div>
+          </div>
+          <div class="schema-fields">
+            <span class="sfield key">id</span>
+            <span class="sfield">title</span>
+            <span class="sfield">category</span>
+            <span class="sfield enum">difficulty: Easy|Medium|Hard</span>
+            <span class="sfield">description</span>
+            <span class="sfield">hint</span>
+            <span class="sfield">attack_payload</span>
+            <span class="sfield">vuln_patterns{python, php}</span>
+            <span class="sfield">languages: []</span>
+            <span class="sfield opt">attack_flow: []</span>
+            <span class="sfield opt">canonical_fix</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 09 SANDBOX SECURITY -->
+    <section class="section" id="security">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>09<span class="bracket">]</span> Security Hardening</div>
+        <h2 class="section-title">Sandbox Constraints</h2>
+      </div>
+
+      <p>Every user submission runs inside a hardened Docker container. The attack surface is zero by design — learners can write and exploit any vulnerability they want, but the container cannot reach the host system or the internet.</p>
+
+      <div class="constraint-grid">
+        <div class="constraint-item">
+          <div class="constraint-key">--network</div>
+          <div class="constraint-val">none</div>
+          <div class="constraint-why">Air-gapped — no internet, no host network access</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--memory</div>
+          <div class="constraint-val">128m</div>
+          <div class="constraint-why">Caps DoS / memory bomb attacks</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--cpu-quota</div>
+          <div class="constraint-val">50000 (50%)</div>
+          <div class="constraint-why">One core max; prevents CPU starvation</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--read-only</div>
+          <div class="constraint-val">true</div>
+          <div class="constraint-why">No filesystem writes; rootkit can't persist</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--security-opt</div>
+          <div class="constraint-val">no-new-privileges</div>
+          <div class="constraint-why">Blocks setuid / privilege escalation</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--cap-drop</div>
+          <div class="constraint-val">ALL</div>
+          <div class="constraint-why">All Linux capabilities removed</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">--user</div>
+          <div class="constraint-val">1000:1000</div>
+          <div class="constraint-why">Non-root process inside container</div>
+        </div>
+        <div class="constraint-item">
+          <div class="constraint-key">auto-cleanup TTL</div>
+          <div class="constraint-val">60 seconds</div>
+          <div class="constraint-why">Container removed automatically after session expires</div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 10 API REFERENCE -->
+    <section class="section" id="api">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>10<span class="bracket">]</span> API</div>
+        <h2 class="section-title">API Reference</h2>
+      </div>
+
+      <p class="api-group-label">Challenges</p>
+      <div class="api-list">
+        <div class="api-row">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/challenges</span>
+          <span class="api-desc">List all challenges with metadata</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/challenges/&lt;id&gt;</span>
+          <span class="api-desc">Challenge detail + skeleton code for language</span>
+        </div>
+      </div>
+
+      <p class="api-group-label">Submission & Session</p>
+      <div class="api-list">
+        <div class="api-row">
+          <span class="api-method post">POST</span>
+          <span class="api-path">/api/submit</span>
+          <span class="api-desc">Submit code → returns session_id immediately</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/sessions/&lt;session_id&gt;</span>
+          <span class="api-desc">Poll session status (processing → done)</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method get">GET</span>
+          <span class="api-path">/api/report/&lt;session_id&gt;</span>
+          <span class="api-desc">Fetch completed AI vulnerability report</span>
+        </div>
+      </div>
+
+      <p class="api-group-label">Attack & Chat</p>
+      <div class="api-list">
+        <div class="api-row">
+          <span class="api-method post">POST</span>
+          <span class="api-path">/api/attack</span>
+          <span class="api-desc">Send payload to live sandbox, get HTTP response</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method post">POST</span>
+          <span class="api-path">/api/chat</span>
+          <span class="api-desc">Context-aware Claude Q&amp;A on submitted code</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 11 COMPETITION -->
+    <section class="section" id="competition">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>11<span class="bracket">]</span> Market Analysis</div>
+        <h2 class="section-title">Competitive Landscape</h2>
+      </div>
+
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>AI Feedback</th>
+            <th>Live Exploit</th>
+            <th>Free / No Setup</th>
+            <th>Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OWASP WebGoat</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>⚠️ Self-hosted</td>
+            <td>No AI guidance; complex local setup required</td>
+          </tr>
+          <tr>
+            <td>HackTheBox / TryHackMe</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>⚠️ Freemium</td>
+            <td>Gamified but no AI code review; not code-submission based</td>
+          </tr>
+          <tr>
+            <td>Secure Code Warrior</td>
+            <td>△ Rule-based hints</td>
+            <td>❌</td>
+            <td>❌ Enterprise only</td>
+            <td>No live exploit; expensive; no conversational AI</td>
+          </tr>
+          <tr>
+            <td>Snyk Learn</td>
+            <td>△ Static tips</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>Read-only content; no code submission or live sandbox</td>
+          </tr>
+          <tr class="ours">
+            <td>SecureCraft ★</td>
+            <td>✅ Claude AI</td>
+            <td>✅ Docker sandbox</td>
+            <td>✅ Zero setup</td>
+            <td>Only platform combining AI code review + live exploit + chat tutoring</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="divider">
+
+    <!-- 12 PORTFOLIO VALUE -->
+    <section class="section" id="portfolio">
+      <div class="section-header">
+        <div class="section-eyebrow"><span class="bracket">[</span>12<span class="bracket">]</span> Portfolio Value</div>
+        <h2 class="section-title">Why This Project</h2>
+      </div>
+
+      <div class="portfolio-grid">
+        <div class="portfolio-item">
+          <div class="icon">🔐</div>
+          <h4>Security Domain Depth</h4>
+          <p>OWASP Top 10 coverage with real attack payloads — not a trivial CRUD app</p>
+        </div>
+        <div class="portfolio-item">
+          <div class="icon">🐳</div>
+          <h4>Docker Orchestration</h4>
+          <p>Full container lifecycle: build, run, attack validation, TTL-based auto-cleanup via Docker SDK</p>
+        </div>
+        <div class="portfolio-item">
+          <div class="icon">🤖</div>
+          <h4>Structured Claude Output</h4>
+          <p>JSON vulnerability reports with line-level precision, severity grading, and graceful fallback</p>
+        </div>
+        <div class="portfolio-item">
+          <div class="icon">⚡</div>
+          <h4>Async Architecture</h4>
+          <p>Concurrent AI + sandbox execution, async polling pattern, thread-safe session management</p>
+        </div>
+        <div class="portfolio-item">
+          <div class="icon">🧪</div>
+          <h4>Test Coverage</h4>
+          <p>42 tests across routes, AI parsing, and service logic — all external deps mocked</p>
+        </div>
+        <div class="portfolio-item">
+          <div class="icon">🎓</div>
+          <h4>Educational Design</h4>
+          <p>Learn-by-breaking loop: adversarial submission, live exploit, AI tutor, contextual Q&amp;A</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <p><strong>SecureCraft</strong> — Development Specification · 2026 · Portfolio Project built with Claude API + Docker</p>
+</footer>
+
+</body>
+</html>
