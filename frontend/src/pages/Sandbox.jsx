@@ -85,7 +85,7 @@ export default function Sandbox() {
   }, [session_id])
 
   // ── Derived values ─────────────────────────────────────────────────────────
-  const sandboxUrl = port ? `http://127.0.0.1:${port}` : null
+  const sandboxUrl = port ? `http://${window.location.hostname}:${port}` : null
 
   // ── Loading splash ─────────────────────────────────────────────────────────
   if (loadingPage) {
