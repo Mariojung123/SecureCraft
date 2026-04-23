@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from '../api'
 import { TypingIndicator } from './ReportComponents'
 
+const genId = () => (crypto.randomUUID ? genId() : Math.random().toString(36).slice(2))
+
 export default function AiChat({ sessionId, report }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -33,7 +35,7 @@ export default function AiChat({ sessionId, report }) {
 
     const newHistory = [...messages]
     userHasInteracted.current = true
-    setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }])
+    setMessages(prev => [...prev, { id: genId(), role: 'user', content: trimmed }])
     setInput('')
     setTyping(true)
 
@@ -41,10 +43,10 @@ export default function AiChat({ sessionId, report }) {
       const { reply, error } = await sendChatMessage(sessionId, trimmed, newHistory)
       setMessages(prev => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
+        { id: genId(), role: 'assistant', content: error ? `(AI unavailable: ${error})` : reply },
       ])
     } catch {
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: '(Network error — please try again.)' }])
+      setMessages(prev => [...prev, { id: genId(), role: 'assistant', content: '(Network error — please try again.)' }])
     } finally {
       setTyping(false)
       inputRef.current?.focus()
