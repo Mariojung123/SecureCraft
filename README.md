@@ -4,7 +4,7 @@
 
 📄 **[View Full Project Specification](https://mariojung123.github.io/SecureCraft/securecraft-spec-en.html)**
 
-✅ **[TRY Demo](http://54.157.84.197/)**
+✅ **[TRY Demo](http://54.157.84.197/)** Java -> Not yet
 
 ---
 
